@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WMJ24 Tier Selector</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #222;
+        color: #fff;
+        position: relative;
+      }
+
+      .reset-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background-color: #f3722c;
+        color: #fff;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+
+      .reset-button:hover {
+        background-color: #f94144;
+      }
+
+      .container {
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 600px;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+        color: #f9c74f;
+      }
+
+      p {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+      }
+
+      .options button {
+        background-color: #f94144;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        margin: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+
+      .options button:hover {
+        background-color: #f3722c;
+      }
+
+      .back-button {
+        margin-top: 15px;
+        background-color: #f9c74f;
+        color: #333;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+      }
+
+      .back-button:hover {
+        background-color: #f3722c;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      #result {
+        font-size: 1.4rem;
+        font-weight: bold;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="reset-button" onclick="reset()">Reset</button>
+    <div class="container">
+      <h1>Tier Selector</h1>
+      <div id="question-container">
+        <p id="question">
+          How many members in your team have either never participated in a
+          &lt;1 week game jam or have &lt;1 year of total game development
+          experience?<br /><i
+            >*If you are solo, choose either over or less than half the team</i
+          >
+        </p>
+        <div class="options">
+          <button onclick="nextQuestion('Over half the team')">
+            Over half the team
+          </button>
+          <button onclick="nextQuestion('Exactly half the team')">
+            Exactly half the team
+          </button>
+          <button onclick="nextQuestion('Less than half the team')">
+            Less than half the team
+          </button>
+        </div>
+      </div>
+      <button class="back-button hidden" id="back-btn" onclick="goBack()">
+        Back
+      </button>
+      <div id="result" class="hidden"></div>
+    </div>
+
+    <script>
+      let currentStep = 0;
+      const questions = [
+        {
+          question:
+            "How many members in your team have either never participated in a &lt;1 week game jam or have &lt;1 year of total game development experience?<br /><i>*If you are solo, choose either over or less than half the team</i >",
+          options: [
+            "Over half the team",
+            "Exactly half the team",
+            "Less than half the team",
+          ],
+        },
+        {
+          question:
+            "What is the most amount of game dev experience among your team members?",
+          options: ["1-2 years", "2+ years"],
+        },
+        {
+          question: "How many games have you or your team members published?",
+          options: ["≤3 games", "4+ games"],
+        },
+        {
+          question:
+            "How many <1 week game jams have you or your team participated in?",
+          options: ["1-2", "3+"],
+        },
+      ];
+
+      const answers = [];
+      const backButton = document.getElementById("back-btn");
+
+      function nextQuestion(option) {
+        answers.push(option);
+        if (currentStep === 0 && option === "Over half the team") {
+          displayResult("Novice");
+          return;
+        } else if (currentStep === 0 && option === "Exactly half the team") {
+          displayResult("Intermediate");
+          return;
+        } else if (currentStep === 1) {
+          switch (option) {
+            case "1-2 years":
+              displayResult("Intermediate");
+              return;
+            case "2+ years":
+              break;
+          }
+        } else if (currentStep === 2) {
+          switch (option) {
+            case "≤3 games":
+              displayResult("Intermediate");
+              return;
+            case "4+ games":
+              break;
+          }
+        } else if (currentStep === 3) {
+          switch (option) {
+            case "1-2":
+              displayResult("Intermediate");
+              return;
+            case "3+":
+              displayResult("Advanced");
+              return;
+          }
+        }
+
+        currentStep++;
+
+        if (currentStep < questions.length) {
+          displayQuestion(currentStep);
+        } else {
+          displayResult();
+        }
+        updateBackButton();
+      }
+
+      function displayQuestion(step) {
+        document.getElementById("question").innerHTML =
+          questions[step].question;
+
+        const optionsContainer = document.querySelector(".options");
+        optionsContainer.innerHTML = "";
+
+        questions[step].options.forEach((opt) => {
+          optionsContainer.innerHTML += `<button onclick="nextQuestion('${opt}')">${opt}</button>`;
+        });
+      }
+
+      function displayResult(tier) {
+        const result = tier;
+        document.getElementById("question-container").classList.add("hidden");
+        document.getElementById("result").classList.remove("hidden");
+        document.getElementById("result").innerText = `Your Tier: ${result}`;
+        backButton.classList.add("hidden");
+      }
+
+      function goBack() {
+        if (currentStep > 0) {
+          currentStep--;
+          answers.pop();
+          displayQuestion(currentStep);
+          updateBackButton();
+        }
+      }
+
+      function reset() {
+        currentStep = 0;
+        answers.length = 0;
+
+        document.getElementById("result").classList.add("hidden");
+        document
+          .getElementById("question-container")
+          .classList.remove("hidden");
+        displayQuestion(currentStep);
+        updateBackButton();
+      }
+
+      function updateBackButton() {
+        if (currentStep > 0) {
+          backButton.classList.remove("hidden");
+        } else {
+          backButton.classList.add("hidden");
+        }
+      }
+    </script>
+  </body>
+</html>
