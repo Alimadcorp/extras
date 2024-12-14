@@ -6,34 +6,47 @@
     <title>WMJ24 Tier Selector</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
         margin: 0;
         padding: 0;
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background-color: #222;
-        color: #fff;
+        background-color: #fff;
+        color: #000;
+        font-family: var(--itchio_default_font, Lato), sans-serif;
         position: relative;
+        overflow: hidden;
+        cursor: url("https://img.itch.zone/aW1nLzE2MTg5NTEyLnBuZw==/original/H1bk6E.png"),
+          auto;
       }
-
-      .reset-button {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        background-color: #f3722c;
-        color: #fff;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 1rem;
-        transition: background-color 0.3s;
+      button:hover {
+        cursor: url("https://img.itch.zone/aW1nLzE2MTkwMDMyLnBuZw==/original/b2gbnf.png"),
+          pointer;
       }
+      @media (orientation: landscape) {
+        .reset-button {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          background-color: #f3722c;
+          color: #fff;
+          border: none;
+          padding: 8px 15px;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 1rem;
+          transition: background-color 0.3s;
+        }
 
-      .reset-button:hover {
-        background-color: #f94144;
+        .reset-button:hover {
+          background-color: #f94144;
+        }
+      }
+      @media (orientation: portrait) {
+        .reset-button {
+          display: none;
+        }
       }
 
       .container {
@@ -44,25 +57,22 @@
       }
 
       h1 {
-        font-size: 1.8rem;
-        margin-bottom: 20px;
+        font-size: 1.4rem;
         color: #f9c74f;
       }
 
       p {
-        font-size: 1.2rem;
-        margin-bottom: 15px;
+        font-size: clamp(0.8rem, 2.5vw, 2rem);
       }
 
       .options button {
         background-color: #f94144;
         color: #fff;
         border: none;
-        padding: 10px 20px;
-        margin: 10px;
+        padding: 7px 14px;
+        margin: 3px;
         border-radius: 5px;
-        cursor: pointer;
-        font-size: 1rem;
+        font-size: clamp(0.8rem, 2.5vw, 2rem);
         transition: background-color 0.3s;
       }
 
