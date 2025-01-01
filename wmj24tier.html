@@ -262,6 +262,16 @@
           backButton.classList.add("hidden");
         }
       }
+      document.addEventListener("DOMContentLoaded", ()=>{
+        const targetDate = new Date(new Date().getFullYear(), 11, 31, 0, 0, 0);
+        const now = new Date();
+        if (now > targetDate) {
+          const n = Math.floor(Math.random() * 1_000_000) + 1;
+          if(n == 2967){
+            document.getElementById("question").innerHTML = "Jam's over stupid why do you still wanna know your tier?";
+          }
+        } 
+      });
     </script>
   </body>
 </html>
