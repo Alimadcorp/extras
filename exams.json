@@ -1,7 +1,7 @@
-[
+{"exams":[
       {
         "name": "English Paper 1",
         "date": "2024-10-12T12:00:00Z",
         "duration": 3600000
       }
-] 
+]} 
