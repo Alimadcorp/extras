@@ -1,22 +1,7 @@
 [
       {
-        name: "English Paper 1",
-        date: new Date("2024-10-12T12:00:00Z"),
-        duration: 60 * 60 * 1000 // 1 hour in ms
-      },
-      {
-        name: "English Paper 2",
-        date: new Date("2024-10-12T18:00:00Z"),
-        duration: 90 * 60 * 1000 // 1.5 hours in ms
-      },
-      {
-        name: "Mathematics Paper 1",
-        date: new Date("2024-10-15T09:00:00Z"),
-        duration: 120 * 60 * 1000 // 2 hours in ms
-      },
-      {
-        name: "Physics Paper 1",
-        date: new Date("2024-10-18T14:00:00Z"),
-        duration: 90 * 60 * 1000 // 1.5 hours in ms
+        "name": "English Paper 1",
+        "date": "2024-10-12T12:00:00Z",
+        "duration": 3600000
       }
-    ]
+] 
