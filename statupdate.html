@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Status Monitor</title>
+    <style>
+        :root {
+            --primary: #0f0;
+            --secondary: #333;
+            --bg: #111;
+            --text: lime;
+            --border: #0a0;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            width: 100%;
+        }
+        
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: black;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+            min-width: 180px;
+        }
+        
+        button:hover:not(:disabled) {
+            background-color: #3f3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 255, 0, 0.2);
+        }
+        
+        button:disabled {
+            background-color: var(--secondary);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .status-panel {
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 15px;
+            width: 100%;
+        }
+        
+        .status-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-content {
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+        
+        .timer-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .timer-box {
+            background-color: rgba(0, 30, 0, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 10px 15px;
+            text-align: center;
+            flex: 1;
+            margin: 0 5px;
+        }
+        
+        .timer-label {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        
+        .timer-value {
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .response-log {
+            width: 100%;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+        }
+        
+        .log-entry {
+            padding: 15px;
+            border-bottom: 1px solid var(--secondary);
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-time {
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .log-content {
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .success {
+            color: var(--primary);
+        }
+        
+        .error {
+            color: #f55;
+        }
+        
+        .json-view {
+            background-color: rgba(0, 20, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            border-left: 3px solid var(--border);
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .active-request {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>Update Hackclub Slack Stats</h3>
+        
+        <div class="control-panel">
+            <button id="startButton">Start First Request</button>
+            <button id="secondRequestButton" disabled>Send Second Request</button>
+        </div>
+        
+        <div class="timer-display">
+            <div class="timer-box">
+                <div class="timer-label">Time Elapsed</div>
+                <div id="timeElapsed" class="timer-value">0.000s</div>
+            </div>
+            <div class="timer-box">
+                <div class="timer-label">Time Remaining</div>
+                <div id="timeRemaining" class="timer-value">60.000s</div>
+            </div>
+        </div>
+        
+        <div class="status-panel">
+            <div class="status-title">
+                <span>Request Status</span>
+                <span id="requestStatusIndicator">●</span>
+            </div>
+            <div id="status" class="status-content">No requests initiated yet.</div>
+        </div>
+        
+        <div class="response-log" id="responseLog">
+            <div class="log-entry">
+                <div class="log-time">System ready at: <span id="initTime"></span></div>
+                <div class="log-content">Waiting for requests...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const statusElement = document.getElementById("status");
+        const timeElapsedElement = document.getElementById("timeElapsed");
+        const timeRemainingElement = document.getElementById("timeRemaining");
+        const startButton = document.getElementById("startButton");
+        const secondRequestButton = document.getElementById("secondRequestButton");
+        const responseLogElement = document.getElementById("responseLog");
+        const requestStatusIndicator = document.getElementById("requestStatusIndicator");
+        const initTimeElement = document.getElementById("initTime");
+
+        // State variables
+        let startTime = null;
+        let timerInterval = null;
+        let requestCount = 0;
+        let activeRequest = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initTimeElement.textContent = new Date().toLocaleTimeString();
+        });
+
+        // Event Listeners
+        startButton.addEventListener("click", sendFirstRequest);
+        secondRequestButton.addEventListener("click", sendSecondRequest);
+
+        // Main functions
+        async function sendFirstRequest() {
+            if (activeRequest) return;
+            activeRequest = true;
+            updateRequestStatus(true);
+            
+            requestCount++;
+            const requestId = requestCount;
+            addLogEntry(`Initiating first request (ID: ${requestId})...`, 'info');
+            
+            startTime = Date.now();
+            startTimer();
+            updateButtonStates();
+            
+            try {
+                updateStatus(`Sending first request (ID: ${requestId})...`);
+                
+                const response = await fetch("https://slackinhackin.vercel.app/api/fetch", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ position: "0" })
+                });
+
+                const data = await response.json();
+                const duration = (Date.now() - startTime) / 1000;
+                
+                if (!response.ok) {
+                    throw new Error(data.message || "First request failed");
+                }
+                
+                updateStatus(`First request (ID: ${requestId}) successful in ${duration.toFixed(3)}s. Waiting for 60 seconds...`);
+                addLogEntry(`First request (ID: ${requestId}) completed in ${duration.toFixed(3)}s`, 'success', data);
+                
+                secondRequestButton.disabled = false;
+                
+            } catch (error) {
+                const duration = (Date.now() - startTime) / 1000;
+                updateStatus(`Error in first request (ID: ${requestId}): ${error.message}`);
+                addLogEntry(`First request (ID: ${requestId}) failed after ${duration.toFixed(3)}s`, 'error', { error: error.message });
+            } finally {
+                activeRequest = false;
+                updateRequestStatus(false);
+            }
+        }
+
+        async function sendSecondRequest() {
+            if (activeRequest) return;
+            activeRequest = true;
+            updateRequestStatus(true);
+            
+            requestCount++;
+            const requestId = requestCount;
+            addLogEntry(`Initiating second request (ID: ${requestId})...`, 'info');
+            
+            try {
+                updateStatus(`Sending second request (ID: ${requestId})...`);
+                const requestStartTime = Date.now();
+                
+                const response = await fetch("https://slackinhackin.vercel.app/api/fetch", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ position: "1", randomize: "yes" })
+                });
+
+                const data = await response.json();
+                const duration = (Date.now() - requestStartTime) / 1000;
+                const totalDuration = (Date.now() - startTime) / 1000;
+                
+                if (!response.ok) {
+                    throw new Error(data.message || "Second request failed");
+                }
+                
+                updateStatus(`Second request (ID: ${requestId}) successful in ${duration.toFixed(3)}s (total: ${totalDuration.toFixed(3)}s)`);
+                addLogEntry(`Second request (ID: ${requestId}) completed in ${duration.toFixed(3)}s`, 'success', data);
+                
+                // Reset the timer and buttons
+                clearInterval(timerInterval);
+                updateTimerDisplay(60, 60);
+                secondRequestButton.disabled = true;
+                
+            } catch (error) {
+                const duration = (Date.now() - startTime) / 1000;
+                updateStatus(`Error in second request (ID: ${requestId}): ${error.message}`);
+                addLogEntry(`Second request (ID: ${requestId}) failed after ${duration.toFixed(3)}s`, 'error', { error: error.message });
+            } finally {
+                activeRequest = false;
+                updateRequestStatus(false);
+            }
+        }
+
+        // Helper functions
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                const remaining = Math.max(0, 60 - elapsed);
+                updateTimerDisplay(elapsed, remaining);
+            }, 10); // Update every 10ms for smooth display
+        }
+
+        function updateTimerDisplay(elapsed, remaining) {
+            timeElapsedElement.textContent = `${elapsed.toFixed(3)}s`;
+            if(remaining >= 0)
+              timeRemainingElement.textContent = `${remaining.toFixed(3)}s`;
+            
+            // Visual feedback when time is running out
+            if (remaining < 10) {
+                timeRemainingElement.style.color = '#f55';
+            } else {
+                timeRemainingElement.style.color = 'var(--primary)';
+            }
+        }
+
+        function updateStatus(message) {
+            statusElement.textContent = message;
+        }
+
+        function updateButtonStates() {
+            startButton.disabled = startTime !== null;
+            secondRequestButton.disabled = startTime === null;
+        }
+
+        function updateRequestStatus(isActive) {
+            if (isActive) {
+                requestStatusIndicator.classList.add('active-request');
+                requestStatusIndicator.style.color = '#ff0';
+            } else {
+                requestStatusIndicator.classList.remove('active-request');
+                requestStatusIndicator.style.color = '#0f0';
+            }
+        }
+
+        function addLogEntry(message, type = 'info', data = null) {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            
+            const timeElement = document.createElement('div');
+            timeElement.className = 'log-time';
+            timeElement.textContent = `${new Date().toLocaleTimeString()} - `;
+            
+            const contentElement = document.createElement('div');
+            contentElement.className = 'log-content';
+            contentElement.textContent = message;
+            
+            logEntry.appendChild(timeElement);
+            logEntry.appendChild(contentElement);
+            
+            if (data) {
+                const jsonElement = document.createElement('pre');
+                jsonElement.className = 'json-view';
+                jsonElement.textContent = JSON.stringify(data, null, 2);
+                logEntry.appendChild(jsonElement);
+            }
+            
+            responseLogElement.insertBefore(logEntry, responseLogElement.firstChild.nextSibling);
+            
+            // Auto-scroll to new entries
+            if (responseLogElement.scrollTop === 0) {
+                responseLogElement.scrollTop = 0;
+            }
+        }
+    </script>
+</body>
+</html> 
