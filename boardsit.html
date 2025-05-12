@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <title>whos gonna sit next to me in board exams</title>
+ <style>
+  body {
+   background-color: #121212;
+   color: #e0e0e0;
+   font-family: 'Segoe UI', sans-serif;
+   padding: 20px;
+   text-align: center;
+  }
+
+  h2 {
+   color: #66d9ef;
+   font-size: 2.2rem;
+   margin-bottom: 20px;
+  }
+
+  .form-section {
+   background-color: #1e1e1e;
+   padding: 25px;
+   margin: 20px auto;
+   max-width: 450px;
+   border: 1px solid #333;
+   border-radius: 10px;
+   box-shadow: 0 0 10px #000;
+  }
+
+  input, button {
+   width: 90%;
+   margin: 8px 0;
+   padding: 12px;
+   font-size: 1rem;
+   border-radius: 6px;
+   border: 1px solid #444;
+   background-color: #222;
+   color: #fff;
+  }
+
+  button {
+   background-color: #2c2c2c;
+   cursor: pointer;
+   transition: background 0.3s ease;
+  }
+
+  button:hover {
+   background-color: #444;
+  }
+
+  .section-title {
+   font-size: 1.3rem;
+   color: #ffc107;
+   margin-bottom: 10px;
+  }
+
+  .alert {
+   color: #ff6b6b;
+   margin-top: 8px;
+  }
+
+  .hidden {
+   display: none;
+  }
+
+  #results {
+   margin-top: 20px;
+   background: #1a1a1a;
+   padding: 15px;
+   border-radius: 8px;
+   border: 1px solid #333;
+  }
+
+  #results p {
+   margin: 6px 0;
+   border-bottom: 1px dashed #333;
+   padding-bottom: 4px;
+  }
+ </style>
+</head>
+<body>
+ <h3>Who's gonna sit next to me?</h3>
+
+ <div id="uploadSection" class="form-section">
+  <div class="section-title">Upload Your Info</div>
+  <input id="roll" placeholder="College Roll Number" type="text" />
+  <input id="name" placeholder="Your Name" type="text" />
+  <input id="f_name" placeholder="Father's Name" type="text" />
+  <input id="major" placeholder="Your Major" type="text" />
+  <input id="boardRn" placeholder="Board Roll Number" type="number" />
+  <button id="upload">Upload My Info</button>
+  <p class="alert" id="uploadAlert"></p>
+ </div>
+
+ <div id="mainSection" class="form-section hidden">
+  <div class="section-title">Find Nearby Students</div>
+  <input id="searchBoardRn" placeholder="Enter Board Roll No" type="number" />
+  <button id="findNearby">Find Nearby Students</button>
+  <div id="results"></div>
+ </div>
+
+ <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+   apiKey: "AIzaSyCH5fSm8L2-OttClhOiFGJmoNB_GLYkdhk",
+   authDomain: "survey-75c3c.firebaseapp.com",
+   projectId: "survey-75c3c",
+   storageBucket: "survey-75c3c.appspot.com",
+   messagingSenderId: "607873827800",
+   appId: "1:607873827800:web:7ec77a638d0c28c11128ad",
+   databaseURL: "https://survey-75c3c-default-rtdb.asia-southeast1.firebasedatabase.app"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const $ = id => document.getElementById(id);
+
+  const uploaded = localStorage.getItem("uploaded") === "true";
+  const myRoll = localStorage.getItem("myRoll") || "";
+
+  if (uploaded) {
+   $("uploadSection").classList.add("hidden");
+   $("mainSection").classList.remove("hidden");
+   $("searchBoardRn").value = localStorage.getItem("myBoardRn") || "";
+  }
+
+  $("roll").value = myRoll;
+
+  $("upload").onclick = async () => {
+   const roll = $("roll").value.trim();
+   const name = $("name").value.trim();
+   const fName = $("f_name").value.trim();
+   const major = $("major").value.trim();
+   const boardRn = parseInt($("boardRn").value);
+
+   if (!roll || !name || !fName || !major || isNaN(boardRn)) {
+    $("uploadAlert").innerText = "Please fill all fields.";
+    return;
+   }
+
+   const data = {
+    name,
+    f_name: fName,
+    major,
+    boardRn,
+    uploadDate: Date.now()
+   };
+
+   try {
+    await set(ref(db, "students/" + roll), data);
+    localStorage.setItem("uploaded", "true");
+    localStorage.setItem("myRoll", roll);
+    localStorage.setItem("myBoardRn", boardRn);
+    $("uploadSection").classList.add("hidden");
+    $("mainSection").classList.remove("hidden");
+    $("searchBoardRn").value = boardRn;
+    alert("Upload successful!");
+   } catch (e) {
+    $("uploadAlert").innerText = "Upload failed: " + e.message;
+   }
+  };
+
+  $("findNearby").onclick = async () => {
+   const searchRn = parseInt($("searchBoardRn").value);
+   if (isNaN(searchRn)) return alert("Enter a valid board roll number.");
+
+   const snap = await get(child(ref(db), "students"));
+   if (!snap.exists()) return alert("No student data found.");
+
+   const data = Object.values(snap.val());
+   const filtered = data
+     .filter(x => x.boardRn !== searchRn && typeof x.boardRn === "number")
+     .sort((a, b) => Math.abs(a.boardRn - searchRn) - Math.abs(b.boardRn - searchRn))
+     .slice(0, 16);
+
+   $("results").innerHTML = filtered.length
+     ? filtered.map(s => `<p>${s.boardRn} - ${s.name} (${s.major})</p>`).join("")
+     : "<p>No nearby students found.</p>";
+  };
+ </script>
+</body></html>
