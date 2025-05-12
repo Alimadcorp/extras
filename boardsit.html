@@ -96,7 +96,14 @@
 </head>
 <body>
  <h3>Who's gonna sit next to me?</h3>
-
+<div id="mainSection" class="form-section hidden">
+  <div class="section-title">
+   Search...
+  </div>
+  <input id="searchBoardRn" placeholder="Enter Board Roll No" type="number" />
+  <button id="findNearby">Find Nearby Students</button>
+  <div id="results"></div>
+</div> 
  <div id="uploadSection" class="form-section">
   <div class="section-title">
    Upload Your Info
@@ -127,15 +134,6 @@
   <input id="center" placeholder="Exam Center" type="text" />
   <button id="upload">Upload My Info</button>
   <p class="alert" id="uploadAlert"></p>
- </div>
-
- <div id="mainSection" class="form-section hidden">
-  <div class="section-title">
-   Search...
-  </div>
-  <input id="searchBoardRn" placeholder="Enter Board Roll No" type="number" />
-  <button id="findNearby">Find Nearby Students</button>
-  <div id="results"></div>
  </div>
 
  <script type="module">
@@ -171,7 +169,7 @@
   const myRoll = localStorage.getItem("myRoll") || "";
 
   if (uploaded) {
-   $("uploadSection").classList.add("hidden");
+   //$("uploadSection").classList.add("hidden");
    $("mainSection").classList.remove("hidden");
    $("searchBoardRn").value = localStorage.getItem("myBoardRn") || "";
   }
