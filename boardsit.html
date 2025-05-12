@@ -153,6 +153,11 @@
    const boardRn = parseInt($("boardRn").value);
    if (!roll.match(/\d{4}\-1\-\d{2}/)) {
     alert("ENTER YOUR CORRECT COLLEGE ROLL NUMBER. FOR EXAMPLE: 0221-1-24");
+    return;
+   }
+   if(!boardRn.match(/\d{6,7}/)){
+    alert("PLEASE ENTER CORRECR BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
+    return;
    }
    let saved = localStorage.getItem("roll")
    if (saved) {
@@ -160,6 +165,7 @@
      alert(`I know your roll number is ${saved} why did you give the wrong input? As a result, you will be banished from the use of this application forever.`);
      localStorage.setItem("banished", "forever");
      document.body.innerHTML = "GO AWAY";
+     return;
     }
    }
    if (!roll || !name || !fName || !major || isNaN(boardRn)) {
