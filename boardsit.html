@@ -6,34 +6,29 @@
  <title>whos gonna sit next to me in board exams</title>
  <style>
   body {
-   background-color: #121212;
+   background: radial-gradient(circle at top, #0f0f0f, #121212);
    color: #e0e0e0;
    font-family: 'Segoe UI', sans-serif;
-   padding: 20px;
+   padding: 10px;
    text-align: center;
-  }
-
-  h2 {
-   color: #66d9ef;
-   font-size: 2.2rem;
-   margin-bottom: 20px;
+   font-size: 16px;
   }
 
   .form-section {
-   background-color: #1e1e1e;
-   padding: 25px;
-   margin: 20px auto;
-   max-width: 450px;
+   background: linear-gradient(145deg, #1a1a1a, #111);
+   padding: 8px;
+   margin: 2px auto;
+   width: 98%;
    border: 1px solid #333;
    border-radius: 10px;
    box-shadow: 0 0 10px #000;
   }
 
-  input, button {
-   width: 90%;
-   margin: 8px 0;
-   padding: 12px;
-   font-size: 1rem;
+  select, input, button {
+   width: 95%;
+   margin: 4px 0;
+   padding: 9px;
+   font-size: 0.9rem;
    border-radius: 6px;
    border: 1px solid #444;
    background-color: #222;
@@ -50,33 +45,52 @@
    background-color: #444;
   }
 
-  .section-title {
-   font-size: 1.3rem;
-   color: #ffc107;
-   margin-bottom: 10px;
+  details {
+   margin: 8px 0;
+   background: #191919;
+   padding: 10px 12px;
+   font-size: 0.6rem;
+   border-left: 4px solid #666;
+   border-radius: 6px;
+   text-align: left;
+   transition: border-color 0.3s, box-shadow 0.3s;
+   overflow-wrap: anywhere;
   }
 
-  .alert {
-   color: #ff6b6b;
-   margin-top: 8px;
+  summary {
+   font-size: 0.8rem;
+   font-weight: 600;
+   cursor: pointer;
   }
 
-  .hidden {
+  details:hover {
+   border-color: #66d9ef;
+   box-shadow: 0 0 6px #66d9ef33;
+  }
+
+  .distance-0 {
+   border-color: #00faff;
+  }
+  .distance-1 {
+   border-color: #00ffd5;
+  }
+  .distance-2 {
+   border-color: #00ff8c;
+  }
+  .distance-3 {
+   border-color: #aaff00;
+  }
+  .distance-4 {
+   border-color: #ffdd00;
+  }
+  .distance-5 {
+   border-color: #ff8c00;
+  }
+  .distance-6, .distance-7, .distance-8 {
+   border-color: #ff0040;
+  }
+  .hidden{
    display: none;
-  }
-
-  #results {
-   margin-top: 20px;
-   background: #1a1a1a;
-   padding: 15px;
-   border-radius: 8px;
-   border: 1px solid #333;
-  }
-
-  #results p {
-   margin: 6px 0;
-   border-bottom: 1px dashed #333;
-   padding-bottom: 4px;
   }
  </style>
 </head>
@@ -88,17 +102,36 @@
    Upload Your Info
   </div>
   <input id="roll" placeholder="College Roll Number" type="text" />
+  <input id="boardRn" placeholder="Board Roll Number" type="number" />
   <input id="name" placeholder="Your Name" type="text" />
   <input id="f_name" placeholder="Father's Name" type="text" />
-  <input id="major" placeholder="Your Major" type="text" />
-  <input id="boardRn" placeholder="Board Roll Number" type="number" />
+  <!-- Replace input for major -->
+  <select id="major">
+   <option value="" disabled>Select Major</option>
+   <option value="ICS">ICS</option>
+   <option value="Pre Medical">Pre Medical</option>
+   <option value="Pre Engineering">Pre Engineering</option>
+   <option value="ICOM">ICOM</option>
+   <option value="General Science">General Science</option>
+   <option value="Arts">Arts</option>
+  </select>
+
+  <!-- Add select for paper shift -->
+  <select id="shift">
+   <option value="" disabled>Select Shift</option>
+   <option value="Morning">Morning</option>
+   <option value="Evening">Evening</option>
+  </select>
+
+  <!-- Add input for exam center -->
+  <input id="center" placeholder="Exam Center" type="text" />
   <button id="upload">Upload My Info</button>
   <p class="alert" id="uploadAlert"></p>
  </div>
 
  <div id="mainSection" class="form-section hidden">
   <div class="section-title">
-   Find Nearby Students
+   Search...
   </div>
   <input id="searchBoardRn" placeholder="Enter Board Roll No" type="number" />
   <button id="findNearby">Find Nearby Students</button>
@@ -134,7 +167,7 @@
   const db = getDatabase(app);
   const $ = id => document.getElementById(id);
 
-  const uploaded = localStorage.getItem("uploaded") === "true";
+  const uploaded = localStorage.getItem("uploadedd") === "true";
   const myRoll = localStorage.getItem("myRoll") || "";
 
   if (uploaded) {
@@ -149,13 +182,15 @@
    const roll = $("roll").value.trim();
    const name = $("name").value.trim();
    const fName = $("f_name").value.trim();
-   const major = $("major").value.trim();
+   const major = $("major").value;
+   const shift = $("shift").value;
+   const center = $("center").value.trim();
    const boardRn = parseInt($("boardRn").value);
-   if (!roll.match(/\d{4}\-1\-\d{2}/)) {
+   if (!roll.padStart(4, '0').match(/\d{4}\-1\-\d{2}/)) {
     alert("ENTER YOUR CORRECT COLLEGE ROLL NUMBER. FOR EXAMPLE: 0221-1-24");
     return;
    }
-   if(!boardRn.match(/\d{6,7}/)){
+   if (!boardRn.toString().padStart(6, "0").match(/\d{6,7}/)) {
     alert("PLEASE ENTER CORRECR BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
     return;
    }
@@ -168,7 +203,7 @@
      return;
     }
    }
-   if (!roll || !name || !fName || !major || isNaN(boardRn)) {
+   if (!roll || !name || !fName || !major || !shift || !center || isNaN(boardRn)) {
     $("uploadAlert").innerText = "Please fill all fields.";
     return;
    }
@@ -177,13 +212,14 @@
     name,
     f_name: fName,
     major,
+    shift,
+    center,
     boardRn,
     uploadDate: Date.now()
    };
-
    try {
-    await set(ref(db, "students/" + roll), data);
-    localStorage.setItem("uploaded", "true");
+    await set(ref(db, "fixstudents/" + roll), data);
+    localStorage.setItem("uploadedd", "true");
     localStorage.setItem("myRoll", roll);
     localStorage.setItem("myBoardRn", boardRn);
     $("uploadSection").classList.add("hidden");
@@ -199,17 +235,33 @@
    const searchRn = parseInt($("searchBoardRn").value);
    if (isNaN(searchRn)) return alert("Enter a valid board roll number.");
 
-   const snap = await get(child(ref(db), "students"));
+   const snap = await get(child(ref(db), "fixstudents"));
    if (!snap.exists()) return alert("No student data found.");
+   const val = snap.val();
 
-   const data = Object.values(snap.val());
-   const filtered = data
-   .filter(x => x.boardRn !== searchRn && typeof x.boardRn === "number")
+   const entries = Object.entries(val)
+   .filter(([, x]) => typeof x.boardRn === "number")
+   .map(([roll, x]) => ({
+    roll, ...x
+   }));
+
+   const filtered = entries
    .sort((a, b) => Math.abs(a.boardRn - searchRn) - Math.abs(b.boardRn - searchRn))
    .slice(0, 16);
 
    $("results").innerHTML = filtered.length
-   ? filtered.map(s => `<details><summary>${s.boardRn} - ${s.name}</summary>${s.f_name}<br>${s.major}<br>${s.id})</details>`).join(""): "<p>No nearby students found.</p>";
+   ? filtered.map(s => `
+    <details style="margin: 10px; background: linear-gradient(90deg, #222, #333); padding: 10px; border-radius: 8px; border: 1px solid #444;">
+    <summary style="color: #7dd3fc;">${s.boardRn} - ${s.name} (${s.major})</summary>
+    <div style="font-size: 0.8rem; color: #ddd;">
+    Father Name: <b>${s.f_name}</b><br>
+    College Roll: <b>${s.roll}</b><br>
+    Shift: <b style="color:${s.shift === "Morning" ? "#4ade80": "#facc15"};">${s.shift}</b><br>
+    Exam Center: <b>${s.center}</b><br>
+    Distance: <span style="color:#38bdf8">${Math.abs(s.boardRn - searchRn)}</span> seats away
+    </div>
+    </details>
+    `).join(""): "<p>No nearby students found.</p>";
   };
  </script>
 </body>
