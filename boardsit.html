@@ -197,10 +197,10 @@
    let saved = localStorage.getItem("roll")
    if (saved) {
     if (saved != roll) {
-     alert(`I know your roll number is ${saved} why did you give the wrong input? As a result, you will be banished from the use of this application forever.`);
-     localStorage.setItem("banished", "forever");
-     document.body.innerHTML = "GO AWAY";
-     return;
+     //alert(`Your last known roll number is ${saved}.`);
+     //localStorage.setItem("banished", "forever");
+     //document.body.innerHTML = "GO AWAY";
+     //return;
     }
    }
    if (!roll || !name || !fName || !major || !shift || !center || isNaN(boardRn)) {
@@ -215,6 +215,7 @@
     shift,
     center,
     boardRn,
+    saved,
     uploadDate: Date.now()
    };
    try {
