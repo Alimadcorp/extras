@@ -3,7 +3,7 @@
 <head>
  <meta charset="UTF-8" />
  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
- <title>whos gonna sit next to me in board exams</title>
+ <title>Who's gonna sit next to me in board exams</title>
  <style>
   body {
    background: radial-gradient(circle at top, #0f0f0f, #121212);
@@ -238,13 +238,12 @@
    const snap = await get(child(ref(db), "fixstudents"));
    if (!snap.exists()) return alert("No student data found.");
    const val = snap.val();
+   
 
    const entries = Object.entries(val)
-   .filter(([, x]) => typeof x.boardRn === "number")
    .map(([roll, x]) => ({
     roll, ...x
    }));
-
    const filtered = entries
    .sort((a, b) => Math.abs(a.boardRn - searchRn) - Math.abs(b.boardRn - searchRn))
    .slice(0, 16);
