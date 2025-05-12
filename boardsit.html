@@ -84,7 +84,9 @@
  <h3>Who's gonna sit next to me?</h3>
 
  <div id="uploadSection" class="form-section">
-  <div class="section-title">Upload Your Info</div>
+  <div class="section-title">
+   Upload Your Info
+  </div>
   <input id="roll" placeholder="College Roll Number" type="text" />
   <input id="name" placeholder="Your Name" type="text" />
   <input id="f_name" placeholder="Father's Name" type="text" />
@@ -95,15 +97,28 @@
  </div>
 
  <div id="mainSection" class="form-section hidden">
-  <div class="section-title">Find Nearby Students</div>
+  <div class="section-title">
+   Find Nearby Students
+  </div>
   <input id="searchBoardRn" placeholder="Enter Board Roll No" type="number" />
   <button id="findNearby">Find Nearby Students</button>
   <div id="results"></div>
  </div>
 
  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  if (localStorage.getItem("banished") == "forever") {
+   document.body.innerHTML = "GO AWAY";
+  }
+  import {
+   initializeApp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+   getDatabase,
+   ref,
+   set,
+   get,
+   child
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
    apiKey: "AIzaSyCH5fSm8L2-OttClhOiFGJmoNB_GLYkdhk",
@@ -136,7 +151,17 @@
    const fName = $("f_name").value.trim();
    const major = $("major").value.trim();
    const boardRn = parseInt($("boardRn").value);
-
+   if (!roll.match(/\d{4}\-1\-\d{2}/)) {
+    alert("ENTER YOUR CORRECT COLLEGE ROLL NUMBER. FOR EXAMPLE: 0221-1-24");
+   }
+   let saved = localStorage.getItem("roll")
+   if (saved) {
+    if (saved != roll) {
+     alert(`I know your roll number is ${saved} why did you give the wrong input? As a result, you will be banished from the use of this application forever.`);
+     localStorage.setItem("banished", "forever");
+     document.body.innerHTML = "GO AWAY";
+    }
+   }
    if (!roll || !name || !fName || !major || isNaN(boardRn)) {
     $("uploadAlert").innerText = "Please fill all fields.";
     return;
@@ -173,13 +198,12 @@
 
    const data = Object.values(snap.val());
    const filtered = data
-     .filter(x => x.boardRn !== searchRn && typeof x.boardRn === "number")
-     .sort((a, b) => Math.abs(a.boardRn - searchRn) - Math.abs(b.boardRn - searchRn))
-     .slice(0, 16);
+   .filter(x => x.boardRn !== searchRn && typeof x.boardRn === "number")
+   .sort((a, b) => Math.abs(a.boardRn - searchRn) - Math.abs(b.boardRn - searchRn))
+   .slice(0, 16);
 
    $("results").innerHTML = filtered.length
-     ? filtered.map(s => `<p>${s.boardRn} - ${s.name} (${s.major})</p>`).join("")
-     : "<p>No nearby students found.</p>";
+   ? filtered.map(s => `<details><summary>${s.boardRn} - ${s.name}</summary>${s.f_name}<br>${s.major}<br>${s.id})</details>`).join(""): "<p>No nearby students found.</p>";
   };
  </script>
 </body>
