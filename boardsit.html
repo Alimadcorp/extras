@@ -18,6 +18,7 @@
    background: linear-gradient(145deg, #1a1a1a, #111);
    padding: 8px;
    margin: 2px auto;
+   margin-bottom: 30px;
    width: 98%;
    border: 1px solid #333;
    border-radius: 10px;
@@ -89,30 +90,29 @@
   .distance-6, .distance-7, .distance-8 {
    border-color: #ff0040;
   }
-  .hidden{
+  .hidden {
    display: none;
   }
  </style>
 </head>
 <body>
  <h3>Who's gonna sit next to me?</h3>
-<div id="mainSection" class="form-section hidden">
+ <div id="mainSection" class="form-section hidden">
   <div class="section-title">
    Search...
   </div>
   <input id="searchBoardRn" placeholder="Enter Board Roll No" type="number" />
   <button id="findNearby">Find Nearby Students</button>
   <div id="results"></div>
-</div> 
+ </div>
  <div id="uploadSection" class="form-section">
   <div class="section-title">
-   Upload Your Info
+   Upload Your Info First
   </div>
   <input id="roll" placeholder="College Roll Number" type="text" />
   <input id="boardRn" placeholder="Board Roll Number" type="number" />
   <input id="name" placeholder="Your Name" type="text" />
   <input id="f_name" placeholder="Father's Name" type="text" />
-  <!-- Replace input for major -->
   <select id="major">
    <option value="" disabled>Select Major</option>
    <option value="ICS">ICS</option>
@@ -122,24 +122,16 @@
    <option value="General Science">General Science</option>
    <option value="Arts">Arts</option>
   </select>
-
-  <!-- Add select for paper shift -->
   <select id="shift">
    <option value="" disabled>Select Shift</option>
    <option value="Morning">Morning</option>
    <option value="Evening">Evening</option>
   </select>
-
-  <!-- Add input for exam center -->
   <input id="center" placeholder="Exam Center" type="text" />
   <button id="upload">Upload My Info</button>
   <p class="alert" id="uploadAlert"></p>
  </div>
-
  <script type="module">
-  if (localStorage.getItem("banished") == "yes") {
-   //   document.body.innerHTML = "GO AWAY";
-  }
   import {
    initializeApp
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -169,13 +161,21 @@
   const myRoll = localStorage.getItem("myRoll") || "";
 
   if (uploaded) {
-   //$("uploadSection").classList.add("hidden");
    $("mainSection").classList.remove("hidden");
    $("searchBoardRn").value = localStorage.getItem("myBoardRn") || "";
   }
 
   $("roll").value = myRoll;
-
+  let l = JSON.parse(localStorage.getItem("formCache"));
+  if (l && l != {}) {
+   $("name").value = l.name;
+   $("f_name").value = l.f_name;
+   $("major").value = l.major;
+   $("shift").value = l.shift;
+   $("center").value = l.center;
+   $("boardRn").value = l.boardRn;
+  }
+  document.getElementById("searchBoardRn").value = localStorage.getItem("lastSearc") || 0;
   $("upload").onclick = async () => {
    const roll = $("roll").value.trim();
    const name = $("name").value.trim();
@@ -189,18 +189,11 @@
     return;
    }
    if (!boardRn.toString().padStart(6, "0").match(/\d{6,7}/)) {
-    alert("PLEASE ENTER CORRECT BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
+    alert("PLEASE ENTER CORRECR BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
     return;
    }
-   let saved = localStorage.getItem("roll")
-   if (saved) {
-    if (saved != roll) {
-     //alert(`Your last known roll number is ${saved}.`);
-     //localStorage.setItem("banished", "forever");
-     //document.body.innerHTML = "GO AWAY";
-     //return;
-    }
-   }
+
+   let saved = localStorage.getItem("roll");
    if (!roll || !name || !fName || !major || !shift || !center || isNaN(boardRn)) {
     $("uploadAlert").innerText = "Please fill all fields.";
     return;
@@ -213,9 +206,12 @@
     shift,
     center,
     boardRn,
-    saved,
     uploadDate: Date.now()
    };
+   if(saved){
+    data.saved = saved;
+   }
+   localStorage.setItem("formCache", JSON.stringify(data));
    try {
     await set(ref(db, "fixstudents/" + roll), data);
     localStorage.setItem("uploadedd", "true");
@@ -232,35 +228,74 @@
 
   $("findNearby").onclick = async () => {
    const searchRn = parseInt($("searchBoardRn").value);
+   localStorage.setItem("lastSearc", searchRn);
    if (isNaN(searchRn)) return alert("Enter a valid board roll number.");
 
    const snap = await get(child(ref(db), "fixstudents"));
    if (!snap.exists()) return alert("No student data found.");
    const val = snap.val();
-   
+   if (!localStorage.getItem("formCache")) {
+    localStorage.setItem("formCache", JSON.stringify(val[localStorage.getItem("myRoll")]));
+   }
 
    const entries = Object.entries(val)
    .map(([roll, x]) => ({
     roll, ...x
    }));
-   const filtered = entries
-   .sort((a, b) => Math.abs(a.boardRn - searchRn) - Math.abs(b.boardRn - searchRn))
-   .slice(0, 16);
+   renderEntries(entries);
+  };
+  function renderEntries(entries) {
+   const baseRn = parseInt($("searchBoardRn").value);
+   const selfEntry = entries.find(e => e.roll == localStorage.getItem("myRoll"));
 
-   $("results").innerHTML = filtered.length
-   ? filtered.map(s => `
-    <details style="margin: 10px; background: linear-gradient(90deg, #222, #333); padding: 10px; border-radius: 8px; border: 1px solid #444;">
-    <summary style="color: #7dd3fc;">${s.boardRn} - ${s.name} (${s.major})</summary>
+   const sorted = entries.sort((a, b) => a.boardRn - b.boardRn);
+   const baseIndex = sorted.findIndex(e => e.boardRn === baseRn);
+
+   const start = Math.max(0, baseIndex - 8);
+   const end = Math.min(sorted.length, baseIndex + 9);
+
+   const nearby = sorted.slice(start, end);
+   const showList = [];
+
+   // Ensure self is included if not already
+   if (selfEntry && !nearby.find(e => e.roll === selfEntry.roll)) {
+    showList.push(selfEntry);
+   }
+
+   showList.push(...nearby);
+   const uniqueList = Array.from(new Map(showList.map(e => [e.roll, e])).values());
+   const finalList = uniqueList.sort((a, b) => a.boardRn - b.boardRn);
+
+   let html = "";
+   for (let i = 0; i < finalList.length; i++) {
+    const s = finalList[i];
+    if (i > 0) {
+     const prev = finalList[i - 1];
+     const gap = s.boardRn - prev.boardRn;
+     if (gap >= 5) {
+      html += `<div style="font-family: serif; text-align:center; color:#888; margin: 5px 0; font-size: 9px">――――――――― ${gap} seats ―――――――――</div>`;
+     }
+    }
+
+    const isSelf = s.roll === localStorage.getItem("myRoll");
+    html += `
+    <details style="margin: 10px; background: ${isSelf ? "#334155": "linear-gradient(90deg, #222, #333)"}; padding: 10px; border-radius: 8px; border: 1px solid ${isSelf ? "#0ea5e9": "#444"};">
+    <summary style="color: ${isSelf ? "#0ea5e9": "#7dd3fc"};">
+    ${s.boardRn} - ${s.name}${isSelf ? " (You)": ""} (${s.major})
+    </summary>
     <div style="font-size: 0.8rem; color: #ddd;">
     Father Name: <b>${s.f_name}</b><br>
     College Roll: <b>${s.roll}</b><br>
-    Shift: <b style="color:${s.shift === "Morning" ? "#4ade80": "#facc15"};">${s.shift}</b><br>
-    Exam Center: <b>${s.center}</b><br>
-    Distance: <span style="color:#38bdf8">${Math.abs(s.boardRn - searchRn)}</span> seats away
+    ${s.shift ? `Shift: <b style="color:${s.shift === "Morning" ? "#4ade80": "#facc15"};">${s.shift}</b><br>
+    Exam Center: <b>${s.center}</b><br>`: ""}
+    Distance: <span style="color:#38bdf8">${Math.abs(s.boardRn - baseRn)}</span> seats away
     </div>
     </details>
-    `).join(""): "<p>No nearby students found.</p>";
-  };
+    `;
+   }
+
+   $("results").innerHTML = html || "<p>No nearby students found.</p>";
+  }
  </script>
 </body>
 </html>
