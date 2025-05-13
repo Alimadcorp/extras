@@ -113,6 +113,7 @@
   <input id="boardRn" placeholder="Board Roll Number" type="number" />
   <input id="name" placeholder="Your Name" type="text" />
   <input id="f_name" placeholder="Father's Name" type="text" />
+  <input id="ph" placeholder="Whatsapp Ph. Number (Optional)" type="text" />
   <select id="major">
    <option value="" disabled>Select Major</option>
    <option value="ICS">ICS</option>
@@ -187,6 +188,8 @@
    const major = $("major").value;
    const shift = $("shift").value;
    const center = $("center").value.trim();
+   let ph = $("ph").value.trim();
+   if(ph) ph = ph.replace(/[ \-]/g,"").trim();
    const boardRn = parseInt($("boardRn").value);
    if (!roll.padStart(4, '0').match(/\d{4}\-1\-\d{2}/)) {
     alert("ENTER YOUR CORRECT COLLEGE ROLL NUMBER. FOR EXAMPLE: 0221-1-24");
@@ -196,10 +199,17 @@
     alert("PLEASE ENTER CORRECR BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
     return;
    }
-
+   if (name.length < 4) {
+    alert("Please enter your complete and correct name.");
+    return;
+   }
+   if (fName.length < 4) {
+    alert("Please enter a complete and correct father name.");
+    return;
+   }
    let saved = localStorage.getItem("roll");
    if (!roll || !name || !fName || !major || !shift || !center || isNaN(boardRn)) {
-    $("uploadAlert").innerText = "Please fill all fields.";
+    $("uploadAlert").innerText = "Please fill all required fields.";
     return;
    }
 
@@ -214,6 +224,13 @@
    };
    if (saved) {
     data.saved = saved;
+   }
+   if(ph){
+    if (ph.length < 10) {
+    alert("Please enter a properly formatted phone number.");
+    return;
+   }
+    data.phone = ph;
    }
    localStorage.setItem("formCache", JSON.stringify(data));
    try {
@@ -250,7 +267,13 @@
   function renderEntries(entries) {
    const baseRn = parseInt($("searchBoardRn").value);
    const selfRoll = localStorage.getItem("myRoll");
-
+   console.log(entries);
+   let o = {};
+   for(let x = 0; x < entries.length; x++){
+    o[entries[x].center] = o[entries[x].center] ? o[entries[x].center] + 1 : 1;
+    console.log(x)
+   }
+   console.log(o)
    const selfEntry = entries.find(e => e.roll === selfRoll);
    const searchedEntry = entries.find(e => e.boardRn === baseRn);
 
@@ -303,7 +326,7 @@
      const prev = finalList[i - 1];
      const gap = s.boardRn - prev.boardRn;
      if (gap >= 5) {
-      html += `<div style="font-family: serif; text-align:center; color:#888; margin: 5px 0; font-size: 9px">――――――――― ${gap-1} seats ―――――――――</div>`;
+      html += `<div style="font-family: serif; text-align:center; color:#888; margin: 5px 0; font-size: 9px">――――――――― ${gap} seats ―――――――――</div>`;
      }
     }
 
@@ -320,12 +343,12 @@
     College Roll: <b>${s.roll}</b><br>
     ${s.shift ? `Shift: <b style="color:${s.shift === "Morning" ? "#4ade80": "#facc15"};">${s.shift}</b><br>
     Exam Center: <b>${s.center}</b><br>`: ""}
+    ${s.phone ? `Phone: <b>${s.phone}</b><br>`: ""}
     Distance: <span style="color:#38bdf8">${Math.abs(s.boardRn - baseRn)}</span> seats away
     </div>
     </details>
     `;
    }
-
    $("results").innerHTML = html || "<p>No nearby students found.</p>";
   }
  </script>
