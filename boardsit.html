@@ -131,6 +131,9 @@
   <button id="upload">Upload My Info</button>
   <p class="alert" id="uploadAlert"></p>
  </div>
+ <details><summary>What is this?</summary>
+  This is an app where <b>1st Year GCU students</b> whose board exams are about to be held can share their roll numbers with each other in order to know <b>which students will sit with them in the exam</b>.
+ </details>
  <script type="module">
   import {
    initializeApp
@@ -140,7 +143,8 @@
    ref,
    set,
    get,
-   child
+   child,
+   onValue
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
@@ -208,7 +212,7 @@
     boardRn,
     uploadDate: Date.now()
    };
-   if(saved){
+   if (saved) {
     data.saved = saved;
    }
    localStorage.setItem("formCache", JSON.stringify(data));
@@ -231,100 +235,99 @@
    localStorage.setItem("lastSearc", searchRn);
    if (isNaN(searchRn)) return alert("Enter a valid board roll number.");
 
-   const snap = await get(child(ref(db), "fixstudents"));
-   if (!snap.exists()) return alert("No student data found.");
-   const val = snap.val();
-   if (!localStorage.getItem("formCache")) {
-    localStorage.setItem("formCache", JSON.stringify(val[localStorage.getItem("myRoll")]));
-   }
-
-   const entries = Object.entries(val)
-   .map(([roll, x]) => ({
-    roll, ...x
-   }));
-   renderEntries(entries);
+   onValue(ref(db, "fixstudents"), snap => {
+    if (!snap.exists()) return alert("No student data found.");
+    const val = snap.val();
+    const entries = Object.entries(val).map(([roll, x]) => ({
+     roll, ...x
+    }));
+    if (!localStorage.getItem("formCache")) {
+     localStorage.setItem("formCache", JSON.stringify(val[localStorage.getItem("myRoll")]));
+    }
+    renderEntries(entries);
+   });
   };
   function renderEntries(entries) {
-  const baseRn = parseInt($("searchBoardRn").value);
-  const selfRoll = localStorage.getItem("myRoll");
+   const baseRn = parseInt($("searchBoardRn").value);
+   const selfRoll = localStorage.getItem("myRoll");
 
-  const selfEntry = entries.find(e => e.roll === selfRoll);
-  const searchedEntry = entries.find(e => e.boardRn === baseRn);
+   const selfEntry = entries.find(e => e.roll === selfRoll);
+   const searchedEntry = entries.find(e => e.boardRn === baseRn);
 
-  const sorted = [...entries].sort((a, b) => a.boardRn - b.boardRn);
-  let baseIndex = sorted.findIndex(e => e.boardRn === baseRn);
-  if (baseIndex === -1) {
+   const sorted = [...entries].sort((a, b) => a.boardRn - b.boardRn);
+   let baseIndex = sorted.findIndex(e => e.boardRn === baseRn);
+   if (baseIndex === -1) {
     baseIndex = sorted.findIndex(e => e.boardRn > baseRn);
     if (baseIndex === -1) baseIndex = sorted.length - 1;
-  }
+   }
 
-  const start = Math.max(0, baseIndex - 8);
-  const end = Math.min(sorted.length, baseIndex + 9);
-  const nearby = sorted.slice(start, end);
+   const start = Math.max(0, baseIndex - 8);
+   const end = Math.min(sorted.length, baseIndex + 9);
+   const nearby = sorted.slice(start, end);
 
-  const showList = [];
+   const showList = [];
 
-  // Always include self entry if it exists
-  if (selfEntry && !nearby.find(e => e.roll === selfEntry.roll)) {
+   // Always include self entry if it exists
+   if (selfEntry && !nearby.find(e => e.roll === selfEntry.roll)) {
     showList.push(selfEntry);
-  }
+   }
 
-  // Add all nearby entries
-  showList.push(...nearby);
+   // Add all nearby entries
+   showList.push(...nearby);
 
-  // If searched roll is not in nearby already, add it
-  if (searchedEntry && !showList.find(e => e.boardRn === searchedEntry.boardRn)) {
+   // If searched roll is not in nearby already, add it
+   if (searchedEntry && !showList.find(e => e.boardRn === searchedEntry.boardRn)) {
     showList.push(searchedEntry);
-  }
+   }
 
-  // If no match at all, show a dummy "Searched Roll" entry
-  if (!searchedEntry && !showList.find(e => e.boardRn === baseRn)) {
+   // If no match at all, show a dummy "Searched Roll" entry
+   if (!searchedEntry && !showList.find(e => e.boardRn === baseRn)) {
     showList.push({
-      boardRn: baseRn,
-      name: "Searched Roll",
-      f_name: "-",
-      roll: "-",
-      major: "-",
-      shift: "",
-      center: ""
+     boardRn: baseRn,
+     name: "Searched Roll",
+     f_name: "-",
+     roll: "-",
+     major: "-",
+     shift: "",
+     center: ""
     });
-  }
+   }
 
-  const uniqueList = Array.from(new Map(showList.map(e => [e.roll + "|" + e.boardRn, e])).values());
-  const finalList = uniqueList.sort((a, b) => a.boardRn - b.boardRn);
+   const uniqueList = Array.from(new Map(showList.map(e => [e.roll + "|" + e.boardRn, e])).values());
+   const finalList = uniqueList.sort((a, b) => a.boardRn - b.boardRn);
 
-  let html = "";
-  for (let i = 0; i < finalList.length; i++) {
+   let html = "";
+   for (let i = 0; i < finalList.length; i++) {
     const s = finalList[i];
     if (i > 0) {
-      const prev = finalList[i - 1];
-      const gap = s.boardRn - prev.boardRn;
-      if (gap >= 5) {
-        html += `<div style="font-family: serif; text-align:center; color:#888; margin: 5px 0; font-size: 9px">――――――――― ${gap} seats ―――――――――</div>`;
-      }
+     const prev = finalList[i - 1];
+     const gap = s.boardRn - prev.boardRn;
+     if (gap >= 5) {
+      html += `<div style="font-family: serif; text-align:center; color:#888; margin: 5px 0; font-size: 9px">――――――――― ${gap} seats ―――――――――</div>`;
+     }
     }
 
     const isSelf = s.roll === selfRoll;
     const isSearched = s.boardRn === baseRn;
 
     html += `
-    <details style="margin: 10px; background: ${isSelf ? "#334155" : isSearched ? "#1e293b" : "linear-gradient(90deg, #222, #333)"}; padding: 10px; border-radius: 8px; border: 1px solid ${isSelf ? "#0ea5e9" : isSearched ? "#f472b6" : "#444"};">
-      <summary style="color: ${isSelf ? "#0ea5e9" : isSearched ? "#f472b6" : "#7dd3fc"};">
-        ${s.boardRn} - ${s.name}${isSelf ? " (You)" : isSearched ? " (Searched)" : ""} (${s.major})
-      </summary>
-      <div style="font-size: 0.8rem; color: #ddd;">
-        Father Name: <b>${s.f_name}</b><br>
-        College Roll: <b>${s.roll}</b><br>
-        ${s.shift ? `Shift: <b style="color:${s.shift === "Morning" ? "#4ade80" : "#facc15"};">${s.shift}</b><br>
-        Exam Center: <b>${s.center}</b><br>` : ""}
-        Distance: <span style="color:#38bdf8">${Math.abs(s.boardRn - baseRn)}</span> seats away
-      </div>
+    <details style="margin: 10px; background: ${isSelf ? "#334155": isSearched ? "#1e293b": "linear-gradient(90deg, #222, #333)"}; padding: 10px; border-radius: 8px; border: 1px solid ${isSelf ? "#0ea5e9": isSearched ? "#f472b6": "#444"};">
+    <summary style="color: ${isSelf ? "#0ea5e9": isSearched ? "#f472b6": "#7dd3fc"};">
+    ${s.boardRn} - ${s.name}${isSelf ? " (You)": isSearched ? " (Searched)": ""} (${s.major})
+    </summary>
+    <div style="font-size: 0.8rem; color: #ddd;">
+    Father Name: <b>${s.f_name}</b><br>
+    College Roll: <b>${s.roll}</b><br>
+    ${s.shift ? `Shift: <b style="color:${s.shift === "Morning" ? "#4ade80": "#facc15"};">${s.shift}</b><br>
+    Exam Center: <b>${s.center}</b><br>`: ""}
+    Distance: <span style="color:#38bdf8">${Math.abs(s.boardRn - baseRn)}</span> seats away
+    </div>
     </details>
     `;
-  }
+   }
 
-  $("results").innerHTML = html || "<p>No nearby students found.</p>";
-}
+   $("results").innerHTML = html || "<p>No nearby students found.</p>";
+  }
  </script>
 </body>
 </html>
