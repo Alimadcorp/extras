@@ -102,10 +102,74 @@
    <div class="section-title">
     Search...
    </div>
+
    <input id="searchBoardRn" placeholder="Enter Board Roll No" type="number" />
    <button id="findNearby">Find Nearby Students</button>
    <div id="results"></div>
   </div>
+  <div id="countdown" class="form-section" style="margin-bottom: 10px; font-size: 1rem;"></div>
+  <script>
+   const countdownEl = document.getElementById("countdown");
+   const shiftInput = document.getElementById("shift");
+
+   let timerInterval;
+
+   function updateCountdown() {
+    clearInterval(timerInterval);
+
+    const now = new Date();
+    const endMorning = new Date("2025-05-21T08:30:00");
+    const endEvening = new Date("2025-05-21T13:30:00");
+    const examOver = new Date("2025-06-06T00:00:00");
+
+    let endTime = endMorning;
+    if (shiftInput?.value.toLowerCase() === "evening") endTime = endEvening;
+
+    if (now > examOver) {
+     countdownEl.textContent = "Bro the exams are over what are you doing here?";
+     return;
+    }
+
+    if (now >= endTime && now <= examOver) {
+     countdownEl.textContent = "Good luck with exams bro 🫡";
+     return;
+    }
+
+    timerInterval = setInterval(() => {
+     const now = new Date();
+     let target = endMorning;
+     if (shiftInput?.value.toLowerCase() === "evening") target = endEvening;
+
+     if (now >= target && now <= examOver) {
+      countdownEl.textContent = "Good luck with exams bro 🫡";
+      clearInterval(timerInterval);
+      return;
+     }
+
+     if (now > examOver) {
+      countdownEl.textContent = "Bro the exams are over what are you doing here?";
+      clearInterval(timerInterval);
+      return;
+     }
+
+     let diff = target - now;
+     if (diff < 0) diff = 0;
+
+     const ms = diff % 1000;
+     const sec = Math.floor(diff / 1000) % 60;
+     const min = Math.floor(diff / (1000 * 60)) % 60;
+     const hr = Math.floor(diff / (1000 * 60 * 60)) % 24;
+     const day = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+     countdownEl.innerHTML = `Time until exams<br><b>${day}d ${hr}h ${min}m ${sec}s ${ms}ms</b>`;
+    },
+     1);
+   }
+
+   // Init and update on shift change
+   updateCountdown();
+   shiftInput?.addEventListener("change", updateCountdown);
+  </script>
   <div id="uploadSection" class="form-section">
    <div class="section-title">
     Upload Your Info First
@@ -180,7 +244,7 @@
    const b = name2?.trim().toLowerCase().replace(/^m[\. ] */g, "muhammad ");
    console.log(a, b)
    const len = Math.max(a?.length, b?.length);
-   
+
    if (len === 0) return true;
    const threshold = Math.ceil(len * 0.2);
    const dp = Array.from({
@@ -248,7 +312,7 @@
     ...data,
     ...ipInfo
    };
-   if(reason){
+   if (reason) {
     data.reason = reason;
    }
 
@@ -282,7 +346,9 @@
    }
    let isBanned = false;
    let snap = await get(ref(db, "banned"));
-   if (!snap.exists()) { localStorage.setItem("bannedd", "false"); return; }
+   if (!snap.exists()) {
+    localStorage.setItem("bannedd", "false"); return;
+   }
    const val = snap.val();
    let vals = Object.entries(val);
    for (let i = 0; i < vals.length; i++) {
@@ -290,7 +356,7 @@
     if (ipInfo.ip == x.ip || x.roll == roll || x.boardRn == boardRn || same(x.name + x.f_name, name + fName)) {
      disableApp();
      isBanned = true;
-     if(x.reason) delete x.reason;
+     if (x.reason) delete x.reason;
      localStorage.setItem("bannedData", JSON.stringify(x));
      localStorage.setItem("bannedd", "true");
      if (JSON.parse(localStorage.getItem("bannedData")) != bData()) {
@@ -387,7 +453,7 @@
      }
 
      const dobStr = enteredDate.toISOString().split("T")[0];
-     
+
      if (dobStr !== studentsz[roll].DOB) {
       if (!localStorage.getItem("lastStatee")) {
        alert("Incorrect data entered. Please retry. You will be BANNED if you enter the wrong data again.");
@@ -398,7 +464,7 @@
       }
       if (localStorage.getItem("lastStatee") == "warn") {
        alert("Incorrect data entered. You have been banned due to inconsistent data entry.");
-       
+
        await ban(`Incorrect data, attempts: ${attempts}, wrong names: ${ats}, entered date: ${dobStr}, expected: ${studentsz[roll].DOB}`);
        return;
       }
@@ -585,4 +651,4 @@
   }
  </script>
 </body>
-</html>
+ </html>
