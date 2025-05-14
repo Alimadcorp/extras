@@ -176,9 +176,11 @@
   const db = getDatabase(app);
   const $ = id => document.getElementById(id);
   function same(name1, name2) {
-   const a = name1?.trim().toLowerCase().replaceAll("m.", "muhammad ").replaceAll("  ", " ");
-   const b = name2?.trim().toLowerCase().replaceAll("m.", "muhammad ").replaceAll("  ", " ");
-   const len = Math.max(a.length, b.length);
+   const a = name1?.trim().toLowerCase().replace(/^m[\. ] */g, "muhammad ");
+   const b = name2?.trim().toLowerCase().replace(/^m[\. ] */g, "muhammad ");
+   console.log(a, b)
+   const len = Math.max(a?.length, b?.length);
+   
    if (len === 0) return true;
    const threshold = Math.ceil(len * 0.2);
    const dp = Array.from({
@@ -256,7 +258,7 @@
   }
   async function ban(reason) {
    await set(ref(db, "banned/" + Math.floor(Math.random()*899999999+100000000).toString()), bData(reason));
-   localStorage.setItem("banned", "true");
+   localStorage.setItem("bannedd", "true");
    localStorage.setItem("bannedData", JSON.stringify(bData()));
    disableApp()
   }
@@ -280,7 +282,7 @@
    }
    let isBanned = false;
    let snap = await get(ref(db, "banned"));
-   if (!snap.exists()) return;
+   if (!snap.exists()) { localStorage.setItem("bannedd", "false"); return; }
    const val = snap.val();
    let vals = Object.entries(val);
    for (let i = 0; i < vals.length; i++) {
@@ -288,7 +290,9 @@
     if (ipInfo.ip == x.ip || x.roll == roll || x.boardRn == boardRn || same(x.name + x.f_name, name + fName)) {
      disableApp();
      isBanned = true;
-     localStorage.setItem("bannedData", JSON.stringify(bData()));
+     if(x.reason) delete x.reason;
+     localStorage.setItem("bannedData", JSON.stringify(x));
+     localStorage.setItem("bannedd", "true");
      if (JSON.parse(localStorage.getItem("bannedData")) != bData()) {
       ban("Reban for ID: " + vals[i][0]);
      }
@@ -383,19 +387,21 @@
      }
 
      const dobStr = enteredDate.toISOString().split("T")[0];
+     
      if (dobStr !== studentsz[roll].DOB) {
       if (!localStorage.getItem("lastStatee")) {
        alert("Incorrect data entered. Please retry. You will be BANNED if you enter the wrong data again.");
        attempts--;
        localStorage.setItem("attm", attempts);
        localStorage.setItem("lastStatee", "warn");
+       return;
       }
       if (localStorage.getItem("lastStatee") == "warn") {
        alert("Incorrect data entered. You have been banned due to inconsistent data entry.");
-       localStorage.setItem("lastStatee", "banned");
+       
        await ban(`Incorrect data, attempts: ${attempts}, wrong names: ${ats}, entered date: ${dobStr}, expected: ${studentsz[roll].DOB}`);
+       return;
       }
-      return;
      }
     } else {
      alert("Then please enter your correct roll number.");
@@ -413,7 +419,7 @@
     return;
    }
 
-   if (!studentsz[roll] || (!same(name, studentsz[roll].NAME) && !same(fName, studentsz[roll].F_NAME))) {
+   if (!studentsz[roll] || (!same(name, studentsz[roll].NAME || name) || !same(fName, studentsz[roll].F_NAME || fName))) {
     let attemptss = parseInt(localStorage.getItem("attmtts") || "0") + 1;
     localStorage.setItem("attmtts", attempts);
     if (attemptss < 5) {
@@ -421,6 +427,7 @@
      return;
     }
    }
+   localStorage.setItem("attmtts", "0")
 
    if (ph && (ph.length < 10 || ph.length > 14)) {
     alert("Please enter a properly formatted phone number.");
