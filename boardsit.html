@@ -1,1 +1,531 @@
-This site is under maintenance 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <title>Who's gonna sit next to me in board exams</title>
+ <style>
+  body {
+   background: radial-gradient(circle at top, #0f0f0f, #121212);
+   color: #e0e0e0;
+   font-family: 'Segoe UI', sans-serif;
+   padding: 10px;
+   text-align: center;
+   font-size: 16px;
+  }
+
+  .form-section {
+   background: linear-gradient(145deg, #1a1a1a, #111);
+   padding: 8px;
+   margin: 2px auto;
+   margin-bottom: 30px;
+   width: 98%;
+   border: 1px solid #333;
+   border-radius: 10px;
+   box-shadow: 0 0 10px #000;
+  }
+
+  select, input, button {
+   width: 95%;
+   margin: 4px 0;
+   padding: 9px;
+   font-size: 0.9rem;
+   border-radius: 6px;
+   border: 1px solid #444;
+   background-color: #222;
+   color: #fff;
+  }
+
+  button {
+   background-color: #2c2c2c;
+   cursor: pointer;
+   transition: background 0.3s ease;
+  }
+
+  button:hover {
+   background-color: #444;
+  }
+
+  details {
+   margin: 8px 0;
+   background: #191919;
+   padding: 10px 12px;
+   font-size: 0.6rem;
+   border-left: 4px solid #666;
+   border-radius: 6px;
+   text-align: left;
+   transition: border-color 0.3s, box-shadow 0.3s;
+   overflow-wrap: anywhere;
+  }
+
+  summary {
+   font-size: 0.8rem;
+   font-weight: 600;
+   cursor: pointer;
+  }
+
+  details:hover {
+   border-color: #66d9ef;
+   box-shadow: 0 0 6px #66d9ef33;
+  }
+
+  .distance-0 {
+   border-color: #00faff;
+  }
+  .distance-1 {
+   border-color: #00ffd5;
+  }
+  .distance-2 {
+   border-color: #00ff8c;
+  }
+  .distance-3 {
+   border-color: #aaff00;
+  }
+  .distance-4 {
+   border-color: #ffdd00;
+  }
+  .distance-5 {
+   border-color: #ff8c00;
+  }
+  .distance-6, .distance-7, .distance-8 {
+   border-color: #ff0040;
+  }
+  .hidden {
+   display: none;
+  }
+ </style>
+</head>
+<body>
+ <div id=view>
+  <h3>Who's gonna sit next to me?</h3>
+  <div id="mainSection" class="form-section hidden">
+   <div class="section-title">
+    Search...
+   </div>
+   <input id="searchBoardRn" placeholder="Enter Board Roll No" type="number" />
+   <button id="findNearby">Find Nearby Students</button>
+   <div id="results"></div>
+  </div>
+  <div id="uploadSection" class="form-section">
+   <div class="section-title">
+    Upload Your Info First
+   </div>
+   <input id="roll" placeholder="College Roll Number" type="text" />
+   <input id="boardRn" placeholder="Board Roll Number" type="number" />
+   <input id="name" placeholder="Your Name" type="text" />
+   <input id="f_name" placeholder="Father's Name" type="text" />
+   <input id="ph" placeholder="Whatsapp Ph. Number (Optional)" type="text" />
+   <select id="major">
+    <option value="" disabled>Select Major</option>
+    <option value="ICS">ICS</option>
+    <option value="Pre Medical">Pre Medical</option>
+    <option value="Pre Engineering">Pre Engineering</option>
+    <option value="ICOM">ICOM</option>
+    <option value="General Science">General Science</option>
+    <option value="Arts">Arts</option>
+   </select>
+   <select id="shift">
+    <option value="" disabled>Select Shift</option>
+    <option value="Morning">Morning</option>
+    <option value="Evening">Evening</option>
+   </select>
+   <input id="center" placeholder="Exam Center" type="text" />
+   <button id="upload">Upload My Info</button>
+   <p class="alert" id="uploadAlert"></p>
+  </div>
+  <details><summary>What is this?</summary>
+   This is an app where <b>1st Year GCU students</b> whose board exams are about to be held can share their roll numbers with each other in order to know <b>which students will sit with them in the exam</b>.
+  </details>
+  <details><summary>Why provide phone number?</summary>
+   Sharing your phone number is optional to allow other users to contact you and know you before exams.
+  </details>
+ </div>
+ <div id=banView></div>
+ <script src="std.js"></script>
+ <script>
+  if (localStorage.getItem("banned") == "true") {
+   document.getElementById("view").classList.add("hidden");
+   banView.innerHTML = "<h1>Loading...</h1>";
+  }
+ </script>
+ <script type="module">
+  import {
+   initializeApp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+   getDatabase,
+   ref,
+   set,
+   get,
+   child,
+   remove,
+   onValue
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+   apiKey: "AIzaSyCH5fSm8L2-OttClhOiFGJmoNB_GLYkdhk",
+   authDomain: "survey-75c3c.firebaseapp.com",
+   projectId: "survey-75c3c",
+   storageBucket: "survey-75c3c.appspot.com",
+   messagingSenderId: "607873827800",
+   appId: "1:607873827800:web:7ec77a638d0c28c11128ad",
+   databaseURL: "https://survey-75c3c-default-rtdb.asia-southeast1.firebasedatabase.app"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const $ = id => document.getElementById(id);
+  function same(name1, name2) {
+   const a = name1?.trim().toLowerCase().replaceAll("m.", "muhammad ").replaceAll("  ", " ");
+   const b = name2?.trim().toLowerCase().replaceAll("m.", "muhammad ").replaceAll("  ", " ");
+   const len = Math.max(a.length, b.length);
+   if (len === 0) return true;
+   const threshold = Math.ceil(len * 0.2);
+   const dp = Array.from({
+    length: a.length + 1
+   }, (_, i) =>
+    Array.from({
+     length: b.length + 1
+    }, (_, j) =>
+     i === 0 ? j: j === 0 ? i: 0
+    )
+   );
+   for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+     dp[i][j] = a[i - 1] === b[j - 1]
+     ? dp[i - 1][j - 1]: 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+   }
+   return dp[a.length][b.length] <= threshold;
+  }
+  let ipInfo;
+  window.onload = async function () {
+   if (localStorage.getItem("banned") == "true") {
+    disableApp();
+   }
+   let info = await fetch("https://ipinfo.io/?token=cbfc29fabc2ba8");
+   info = await info.json();
+   let ips = localStorage.getItem("myIp");
+   if (!ips) ips = [];
+   else {
+    ips = JSON.parse(ips)
+   }
+   ips.push(info.ip);
+   localStorage.setItem("myIp", JSON.stringify(ips));
+   ipInfo = info;
+   await checkBan();
+  }
+  function bData() {
+   const roll = $("roll").value.trim();
+   const name = $("name").value.trim();
+   const fName = $("f_name").value.trim();
+   const major = $("major").value;
+   const shift = $("shift").value;
+   const center = $("center").value.trim();
+   let ph = $("ph").value.trim();
+   if (ph) ph = ph.replace(/[ \-]/g, "").trim();
+   const boardRn = parseInt($("boardRn").value);
+   let data = {
+    name,
+    f_name: fName,
+    major,
+    shift,
+    center,
+    boardRn,
+    roll,
+    uploadDate: Date.now()
+   };
+   let saved = localStorage.getItem("roll")
+   if (saved) {
+    data.saved = saved;
+   }
+   if (ph) {
+    data.phone = ph;
+   }
+   data = {
+    ...data,
+    ...ipInfo
+   };
+
+   let cleaned = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== null && v !== undefined && v !== "" && !Number.isNaN(v)));
+   return cleaned;
+  }
+  async function ban() {
+   console.log("banned")
+   await set(ref(db, "banned/" + Math.floor(Math.random()*899999999+100000000).toString()), bData());
+   localStorage.setItem("banned", "true");
+   localStorage.setItem("bannedData", JSON.stringify(bData()));
+  }
+  async function disableApp() {
+   document.getElementById("view").classList.add("hidden");
+   banView.innerHTML = "<h1>You have been banned.</h1><p>Please contact Muhammad Ali (03160474997) on Whatsapp to get yourself unbanned.</p>";
+  }
+  async function checkBan() {
+   await remove(ref(db, "banned"))
+   console.log("dun")
+   const roll = $("roll").value.trim();
+   const name = $("name").value.trim();
+   const fName = $("f_name").value.trim();
+   const major = $("major").value;
+   const shift = $("shift").value;
+   const center = $("center").value.trim();
+   let ph = $("ph").value.trim();
+   if (ph) ph = ph.replace(/[ \-]/g, "").trim();
+   const boardRn = parseInt($("boardRn").value);
+   if (ipInfo.country != "PK") {
+    alert("This app is exclusively for Pakistani users"); disableApp();
+   }
+   let snap = await get(ref(db, "banned"))
+   if (!snap.exists()) return
+   const val = snap.val();
+   console.log(val)
+   let vals = Object.entries(val);
+   for (let i = 0; i < vals.length; i++) {
+    let x = vals[i][1];
+    console.log(ipInfo, roll, boardRn)
+    if (ipInfo.ip == x.ip || x.roll == roll || x.boardRn == boardRn || same(x.name + x.f_name, name + fName)) {
+     disableApp();
+     localStorage.setItem("bannedData", JSON.stringify(bData()));
+     if (JSON.parse(localStorage.getItem("bannedData")) != bData()) {
+      ban();
+     }
+    }
+   }
+  }
+  const uploaded = localStorage.getItem("uploadedd") === "true";
+  const myRoll = localStorage.getItem("myRoll") || "";
+
+  if (uploaded) {
+   $("mainSection").classList.remove("hidden");
+   $("searchBoardRn").value = localStorage.getItem("myBoardRn") || "";
+  }
+
+  $("roll").value = myRoll;
+  let l = JSON.parse(localStorage.getItem("formCache"));
+  if (l && l != {}) {
+   $("name").value = l.name;
+   $("f_name").value = l.f_name;
+   $("major").value = l.major;
+   $("shift").value = l.shift;
+   $("center").value = l.center;
+   $("boardRn").value = l.boardRn;
+   $("ph").value = l.phone || "";
+  }
+  document.getElementById("searchBoardRn").value = localStorage.getItem("lastSearc") || 0;
+  $("upload").onclick = async () => {
+   if (!localStorage.getItem("changed") && localStorage.getItem("formCache")) {
+    localStorage.setItem("changed", "1")
+   }
+   let attempts = localStorage.getItem("attm") || "0";
+   attempts = parseInt(attempts);
+   attempts++;
+   localStorage.setItem("attm", attempts);
+   const roll = $("roll").value.trim();
+   const name = $("name").value.trim();
+   const fName = $("f_name").value.trim();
+   const major = $("major").value;
+   const shift = $("shift").value;
+   const center = $("center").value.trim();
+   let ph = $("ph").value.trim();
+   if (ph) ph = ph.replace(/[ \-]/g, "").trim();
+   const boardRn = parseInt($("boardRn").value);
+   if (!roll.padStart(4, '0').match(/^\d{4}\-1\-\d{2}$/)) {
+    alert("ENTER YOUR CORRECT COLLEGE ROLL NUMBER. FOR EXAMPLE: 0221-1-24");
+    return;
+   }
+   if (!boardRn.toString().padStart(6, "0").match(/\d{6,7}/)) {
+    alert("PLEASE ENTER CORRECR BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
+    return;
+   }
+   if (attempts > 10) {
+    if (confirm(`For ensuring that correct data is provided, you will now be asked to enter your date of birth according to your B-Form, but first, please tell is ${roll} your correct roll number?`)) {
+     let input = document.createElement("input");
+     input.type = "date";
+     input.style.position = "fixed";
+     input.style.opacity = 0;
+     document.body.appendChild(input);
+     let enteredDate = await new Promise((resolve) => {
+      input.addEventListener("change", () => resolve(new Date(input.value)));
+      input.click();
+     });
+     document.body.removeChild(input);
+     enteredDate = enteredDate.toISOString().split("T")[0];
+     if (enteredDate == studentsz[roll].DOB) {
+      // Bach gya saala
+     } else {
+      alert("You have been banned due to inconsistent information entry.");
+      await ban();
+     }
+    } else {
+     alert("Then please enter your correct roll number.");
+    }
+   }
+   if (name.length < 4) {
+    alert("Please enter your complete and correct name.");
+    return;
+   }
+   if (fName.length < 4) {
+    alert("Please enter a complete and correct father name.");
+    return;
+   }
+   if (!same(name, studentsz[roll].NAME) && !same(fName, studentsz[roll].F_NAME)) {
+    alert("Please make sure that name and father name is correct according to your B-Form.");
+   }
+   if (ph && (ph.length < 10 || ph.length > 14)) {
+    alert("Please enter a properly formatted phone number.");
+    return;
+   }
+   let saved = localStorage.getItem("roll");
+   if (!roll || !name || !fName || !major || !shift || !center || isNaN(boardRn)) {
+    $("uploadAlert").innerText = "Please fill all required fields.";
+    return;
+   }
+   let doChange = true;
+   if (localStorage.getItem("myRoll") == roll && JSON.parse(localStorage.getItem("")).boardRn == boardRn) {
+    doChange = false;
+   }
+   let changed = parseInt(localStorage.getItem("changed") || "0");
+   if (changed == 1 && doChange) {
+    if (!confirm("You are only allowed to change your roll number once. So please make sure it is correct.")) {
+     return;
+    }
+   }
+   if (changed > 1 && doChange) {
+    alert("You have been banned due to inconsistent information entry.");
+    await ban();
+    return;
+   }
+   let data = {
+    name,
+    f_name: fName,
+    major,
+    shift,
+    center,
+    boardRn,
+    uploadDate: Date.now()
+   };
+   if (saved) {
+    data.saved = saved;
+   }
+   if (ph) {
+    data.phone = ph;
+   }
+   localStorage.setItem("formCache", JSON.stringify(data));
+   try {
+    await set(ref(db, "fixstudents/" + roll), data);
+    let changed = localStorage.getItem("changed") || "0";
+    changed = parseInt(changed) + doChange ? 1: 0;
+    localStorage.setItem("changed", changed);
+    localStorage.setItem("uploadedd", "true");
+    localStorage.setItem("myRoll", roll);
+    localStorage.setItem("myBoardRn", boardRn);
+    $("uploadSection").classList.add("hidden");
+    $("mainSection").classList.remove("hidden");
+    $("searchBoardRn").value = boardRn;
+    alert("Upload successful!");
+   } catch (e) {
+    $("uploadAlert").innerText = "Upload failed: " + e.message;
+   }
+  };
+
+  $("findNearby").onclick = async () => {
+   const searchRn = parseInt($("searchBoardRn").value);
+   localStorage.setItem("lastSearc", searchRn);
+   if (isNaN(searchRn)) return alert("Enter a valid board roll number.");
+
+   onValue(ref(db, "fixstudents"), snap => {
+    if (!snap.exists()) return alert("No student data found.");
+    const val = snap.val();
+    const entries = Object.entries(val).map(([roll, x]) => ({
+     roll, ...x
+    }));
+    if (!localStorage.getItem("formCache")) {
+     localStorage.setItem("formCache", JSON.stringify(val[localStorage.getItem("myRoll")]));
+    }
+    renderEntries(entries);
+   });
+  };
+  function renderEntries(entries) {
+   const baseRn = parseInt($("searchBoardRn").value);
+   const selfRoll = localStorage.getItem("myRoll");
+   console.log(entries);
+   let o = {};
+   for (let x = 0; x < entries.length; x++) {
+    o[entries[x].center] = o[entries[x].center] ? o[entries[x].center] + 1: 1;
+    console.log(x)
+   }
+   console.log(o)
+   const selfEntry = entries.find(e => e.roll === selfRoll);
+   const searchedEntry = entries.find(e => e.boardRn === baseRn);
+
+   const sorted = [...entries].sort((a, b) => a.boardRn - b.boardRn);
+   let baseIndex = sorted.findIndex(e => e.boardRn === baseRn);
+   if (baseIndex === -1) {
+    baseIndex = sorted.findIndex(e => e.boardRn > baseRn);
+    if (baseIndex === -1) baseIndex = sorted.length - 1;
+   }
+
+   const start = Math.max(0, baseIndex - 8);
+   const end = Math.min(sorted.length, baseIndex + 9);
+   const nearby = sorted.slice(start, end);
+
+   const showList = [];
+
+   if (selfEntry && !nearby.find(e => e.roll === selfEntry.roll)) {
+    showList.push(selfEntry);
+   }
+
+   showList.push(...nearby);
+   if (searchedEntry && !showList.find(e => e.boardRn === searchedEntry.boardRn)) {
+    showList.push(searchedEntry);
+   }
+   if (!searchedEntry && !showList.find(e => e.boardRn === baseRn)) {
+    showList.push({
+     boardRn: baseRn,
+     name: "Searched Roll",
+     f_name: "-",
+     roll: "-",
+     major: "-",
+     shift: "",
+     center: ""
+    });
+   }
+
+   const uniqueList = Array.from(new Map(showList.map(e => [e.roll + "|" + e.boardRn, e])).values());
+   const finalList = uniqueList.sort((a, b) => a.boardRn - b.boardRn);
+
+   let html = "";
+   for (let i = 0; i < finalList.length; i++) {
+    const s = finalList[i];
+    if (i > 0) {
+     const prev = finalList[i - 1];
+     const gap = s.boardRn - prev.boardRn;
+     if (gap >= 5) {
+      html += `<div style="font-family: serif; text-align:center; color:#888; margin: 5px 0; font-size: 9px">――――――――― ${gap-1} seats ―――――――――</div>`;
+     }
+    }
+
+    const isSelf = s.roll === selfRoll;
+    const isSearched = s.boardRn === baseRn;
+
+    html += `
+    <details style="margin: 10px; background: ${isSelf ? "#334155": isSearched ? "#1e293b": "linear-gradient(90deg, #222, #333)"}; padding: 10px; border-radius: 8px; border: 1px solid ${isSelf ? "#0ea5e9": isSearched ? "#f472b6": "#444"};">
+    <summary style="color: ${isSelf ? "#0ea5e9": isSearched ? "#f472b6": "#7dd3fc"};">
+    ${s.boardRn} - ${s.name}${isSelf ? " (You)": isSearched ? " (Searched)": ""} (${s.major})
+    </summary>
+    <div style="font-size: 0.8rem; color: #ddd;">
+    Father Name: <b>${s.f_name}</b><br>
+    College Roll: <b>${s.roll}</b><br>
+    ${s.shift ? `Shift: <b style="color:${s.shift === "Morning" ? "#4ade80": "#facc15"};">${s.shift}</b><br>
+    Exam Center: <b>${s.center}</b><br>`: ""}
+    ${s.phone ? `Phone: <b>${s.phone}</b><br>`: ""}
+    Distance: <span style="color:#38bdf8">${Math.abs(s.boardRn - baseRn)}</span> seats away
+    </div>
+    </details>
+    `;
+   }
+   $("results").innerHTML = html || "<p>No nearby students found.</p>";
+  }
+ </script>
+</body>
+</html>
