@@ -5,6 +5,50 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
  <title>Who's gonna sit next to me in board exams</title>
  <style>
+  .custom-alert-container {
+   position: fixed;
+   inset: 0;
+   background: rgba(0,0,0,0.7);
+   display: none;
+   align-items: center;
+   justify-content: center;
+   z-index: 9999;
+   font-family: sans-serif;
+  }
+
+  .custom-alert, .custom-confirm {
+   background: #111;
+   color: #fff;
+   padding: 20px;
+   border-radius: 8px;
+   border: 2px solid #555;
+   max-width: 300px;
+   text-align: center;
+   box-shadow: 0 0 20px #000;
+  }
+
+  .custom-alert h2, .custom-confirm h2 {
+   margin: 0 0 10px;
+  }
+
+  .custom-alert p, .custom-confirm p {
+   margin: 0 0 20px;
+  }
+
+  .custom-alert-btn, .custom-confirm-yes, .custom-confirm-no {
+   background: #222;
+   color: #fff;
+   border: 1px solid #555;
+   padding: 8px 16px;
+   margin: 0 5px;
+   border-radius: 4px;
+   cursor: pointer;
+   transition: 0.2s;
+  }
+
+  .custom-alert-btn:hover, .custom-confirm-yes:hover, .custom-confirm-no:hover {
+   background: #444;
+  }
   body {
    background: radial-gradient(circle at top, #0f0f0f, #121212);
    color: #e0e0e0;
@@ -107,8 +151,11 @@
    <button id="findNearby">Find Nearby Students</button>
    <div id="results"></div>
   </div>
-  <div id="countdown" class="form-section" style="margin-bottom: 10px; font-size: 1rem;"></div>
+  <div id="countdown" class="form-section" style="margin-bottom: 10px; font-size: 1rem;">
+   Loading...
+  </div>
   <script>
+
    const countdownEl = document.getElementById("countdown");
    const shiftInput = document.getElementById("shift");
 
@@ -126,7 +173,8 @@
     if (shiftInput?.value.toLowerCase() === "evening") endTime = endEvening;
 
     if (now > examOver) {
-     countdownEl.textContent = "Bro the exams are over what are you doing here?";
+     countdownEl.textContent = "Bhai paper faahat hain ab kahe ko aate ho hamre paas?";
+     localStorage.setItem("bannedd", "true")
      return;
     }
 
@@ -342,7 +390,7 @@
    if (ph) ph = ph.replace(/[ \-]/g, "").trim();
    const boardRn = parseInt($("boardRn").value);
    if (ipInfo.country != "PK") {
-    alert("This app is exclusively for Pakistani users"); disableApp();
+    customAlert("This app is exclusively for Pakistani users"); disableApp();
    }
    let isBanned = false;
    let snap = await get(ref(db, "banned"));
@@ -391,6 +439,30 @@
   document.getElementById("searchBoardRn").value = localStorage.getItem("lastSearc") || 0;
 
   $("upload").onclick = async () => {
+   let ss;
+   /*const downloadJSON = (e = "std.js", t = "down")=> {
+   try {
+    let n = JSON.stringify(ss);
+    let s = new Blob([n], {
+     type: "application/js"
+    }),
+    l = URL.createObjectURL(s),
+    o = document.createElement("a"); o.href = l,
+    o.download = e,
+    document.body.appendChild(o),
+    o.click(),
+    document.body.removeChild(o),
+    URL.revokeObjectURL(l)}catch(i) {
+    console.log(i)}};
+    ss = studentsz;
+  let keys = Object.keys(ss);
+  for(let i = 0; i < keys.length; i++){
+   if(ss[keys[i]].EMAIL) delete ss[keys[i]].EMAIL;
+   if(ss[keys[i]].PH) delete ss[keys[i]].PH;
+   if(ss[keys[i]].MARKS) delete ss[keys[i]].MARKS;
+   if(ss[keys[i]].M_ID) delete ss[keys[i]].M_ID;
+  }
+  downloadJSON()*/
    if (!localStorage.getItem("changed") && localStorage.getItem("formCache")) {
     localStorage.setItem("changed", "1");
    }
@@ -410,12 +482,12 @@
    const boardRn = parseInt($("boardRn").value);
 
    if (!roll.padStart(4, '0').match(/^\d{4}-1-\d{2}$/)) {
-    alert("ENTER YOUR CORRECT COLLEGE ROLL NUMBER. FOR EXAMPLE: 0221-1-24");
+    customAlert("ENTER YOUR CORRECT COLLEGE ROLL NUMBER. FOR EXAMPLE: 0221-1-24");
     return;
    }
 
    if (!boardRn.toString().padStart(6, "0").match(/^\d{6,7}$/)) {
-    alert("PLEASE ENTER CORRECT BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
+    customAlert("PLEASE ENTER CORRECT BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
     return;
    }
    let ats = parseInt(localStorage.getItem("attmtts") || "0");
@@ -438,7 +510,7 @@
      input.style.background = "white";
      document.body.appendChild(input);
 
-     alert("Please select your date of birth from the visible calendar.");
+     customAlert("Please select your date of birth from the visible calendar.");
 
      let enteredDate = await new Promise((resolve) => {
       input.addEventListener("change", () => resolve(new Date(input.value)));
@@ -448,7 +520,7 @@
      input.remove();
 
      if (!studentsz[roll] || !studentsz[roll].DOB) {
-      alert("Your roll number does not exist in our records.");
+      customAlert("Your roll number does not exist in our records.");
       return;
      }
 
@@ -456,32 +528,32 @@
 
      if (dobStr !== studentsz[roll].DOB) {
       if (!localStorage.getItem("lastStatee")) {
-       alert("Incorrect data entered. Please retry. You will be BANNED if you enter the wrong data again.");
+       customAlert("Incorrect data entered. Please retry. You will be BANNED if you enter the wrong data again.");
        attempts--;
        localStorage.setItem("attm", attempts);
        localStorage.setItem("lastStatee", "warn");
        return;
       }
       if (localStorage.getItem("lastStatee") == "warn") {
-       alert("Incorrect data entered. You have been banned due to inconsistent data entry.");
+       customAlert("Incorrect data entered. You have been banned due to inconsistent data entry.");
 
        await ban(`Incorrect data, attempts: ${attempts}, wrong names: ${ats}, entered date: ${dobStr}, expected: ${studentsz[roll].DOB}`);
        return;
       }
      }
     } else {
-     alert("Then please enter your correct roll number.");
+     customAlert("Then please enter your correct roll number.");
      return;
     }
    }
 
    if (name.length < 4) {
-    alert("Please enter your complete and correct name.");
+    customAlert("Please enter your complete and correct name.");
     return;
    }
 
    if (fName.length < 4) {
-    alert("Please enter a complete and correct father name.");
+    customAlert("Please enter a complete and correct father name.");
     return;
    }
 
@@ -489,14 +561,14 @@
     let attemptss = parseInt(localStorage.getItem("attmtts") || "0") + 1;
     localStorage.setItem("attmtts", attempts);
     if (attemptss < 5) {
-     alert("Please make sure that name and father name is correct according to your B-Form.");
+     customAlert("Please make sure that name and father name is correct according to your B-Form.");
      return;
     }
    }
    localStorage.setItem("attmtts", "0")
 
    if (ph && (ph.length < 10 || ph.length > 14)) {
-    alert("Please enter a properly formatted phone number.");
+    customAlert("Please enter a properly formatted phone number.");
     return;
    }
 
@@ -516,7 +588,7 @@
    }
 
    if (changed > 1 && doChange) {
-    alert("You have been banned due to repeated attempts at changing your information.");
+    customAlert("You have been banned due to repeated attempts at changing your information.");
     await ban("Too many data changes");
     return;
    }
@@ -545,7 +617,7 @@
     $("uploadSection").classList.add("hidden");
     $("mainSection").classList.remove("hidden");
     $("searchBoardRn").value = boardRn;
-    alert("Upload successful!");
+    customAlert("Upload successful!");
    } catch (e) {
     $("uploadAlert").innerText = "Upload failed: " + e.message;
    }
@@ -554,10 +626,10 @@
   $("findNearby").onclick = async () => {
    const searchRn = parseInt($("searchBoardRn").value);
    localStorage.setItem("lastSearc", searchRn);
-   if (isNaN(searchRn)) return alert("Enter a valid board roll number.");
+   if (isNaN(searchRn)) return customAlert("Enter a valid board roll number.");
 
    onValue(ref(db, "fixstudents"), snap => {
-    if (!snap.exists()) return alert("No student data found.");
+    if (!snap.exists()) return customAlert("No student data found.");
     const val = snap.val();
     const entries = Object.entries(val).map(([roll, x]) => ({
      roll, ...x
@@ -649,6 +721,24 @@
    }
    $("results").innerHTML = html || "<p>No nearby students found.</p>";
   }
+  const alertContainer = document.createElement('div');
+  alertContainer.className = 'custom-alert-container';
+  document.body.appendChild(alertContainer);
+
+  function customAlert(message, title = 'Alert') {
+   const html = `
+   <div class="custom-alert">
+   <h2>${title}</h2>
+   <p>${message}</p>
+   <button class="custom-alert-btn">OK</button>
+   </div>
+   `;
+   alertContainer.innerHTML = html;
+   alertContainer.style.display = 'flex';
+   alertContainer.querySelector('.custom-alert-btn').onclick = () => {
+    alertContainer.style.display = 'none';
+   };
+  }
  </script>
 </body>
- </html>
+</html>
