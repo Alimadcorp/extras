@@ -255,6 +255,7 @@
    await set(ref(db, "banned/" + Math.floor(Math.random()*899999999+100000000).toString()), bData());
    localStorage.setItem("banned", "true");
    localStorage.setItem("bannedData", JSON.stringify(bData()));
+   disableApp()
   }
   async function disableApp() {
    document.getElementById("view").classList.add("hidden");
@@ -312,90 +313,123 @@
    $("ph").value = l.phone || "";
   }
   document.getElementById("searchBoardRn").value = localStorage.getItem("lastSearc") || 0;
+  
   $("upload").onclick = async () => {
-   if (!localStorage.getItem("changed") && localStorage.getItem("formCache")) {
-    localStorage.setItem("changed", "1")
-   }
-   let attempts = localStorage.getItem("attm") || "0";
-   attempts = parseInt(attempts);
-   attempts++;
-   localStorage.setItem("attm", attempts);
-   const roll = $("roll").value.trim();
-   const name = $("name").value.trim();
-   const fName = $("f_name").value.trim();
-   const major = $("major").value;
-   const shift = $("shift").value;
-   const center = $("center").value.trim();
-   let ph = $("ph").value.trim();
-   if (ph) ph = ph.replace(/[ \-]/g, "").trim();
-   const boardRn = parseInt($("boardRn").value);
-   if (!roll.padStart(4, '0').match(/^\d{4}\-1\-\d{2}$/)) {
+  if (!localStorage.getItem("changed") && localStorage.getItem("formCache")) {
+    localStorage.setItem("changed", "1");
+  }
+
+  let attempts = parseInt(localStorage.getItem("attm") || "0") + 1;
+  localStorage.setItem("attm", attempts);
+
+  const roll = $("roll").value.trim();
+  const name = $("name").value.trim();
+  const fName = $("f_name").value.trim();
+  const major = $("major").value;
+  const shift = $("shift").value;
+  const center = $("center").value.trim();
+  let ph = $("ph").value.trim();
+  if (ph) ph = ph.replace(/[ \-]/g, "");
+
+  const boardRn = parseInt($("boardRn").value);
+
+  if (!roll.padStart(4, '0').match(/^\d{4}-1-\d{2}$/)) {
     alert("ENTER YOUR CORRECT COLLEGE ROLL NUMBER. FOR EXAMPLE: 0221-1-24");
     return;
-   }
-   if (!boardRn.toString().padStart(6, "0").match(/\d{6,7}/)) {
-    alert("PLEASE ENTER CORRECR BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
+  }
+
+  if (!boardRn.toString().padStart(6, "0").match(/^\d{6,7}$/)) {
+    alert("PLEASE ENTER CORRECT BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
     return;
-   }
-   if (attempts > 10) {
+  }
+
+  if (attempts > 10) {
     if (confirm(`For ensuring that correct data is provided, you will now be asked to enter your date of birth according to your B-Form, but first, please tell is ${roll} your correct roll number?`)) {
-     let input = document.createElement("input");
-     input.type = "date";
-     input.style.position = "fixed";
-     input.style.opacity = 0;
-     document.body.appendChild(input);
-     let enteredDate = await new Promise((resolve) => {
-      input.addEventListener("change", () => resolve(new Date(input.value)));
-      input.click();
-     });
-     document.body.removeChild(input);
-     enteredDate = enteredDate.toISOString().split("T")[0];
-     if (enteredDate == studentsz[roll].DOB) {
-      // Bach gya saala
-     } else {
-      alert("You have been banned due to inconsistent information entry.");
-      await ban();
-     }
+      let existing = document.getElementById("dobCheckInput");
+      if (existing) existing.remove();
+
+      let input = document.createElement("input");
+      input.type = "date";
+      input.id = "dobCheckInput";
+      input.style.position = "fixed";
+      input.style.left = "50%";
+      input.style.top = "50%";
+      input.style.transform = "translate(-50%, -50%)";
+      input.style.zIndex = 1000;
+      input.style.padding = "10px";
+      input.style.fontSize = "18px";
+      input.style.border = "2px solid black";
+      input.style.background = "white";
+      document.body.appendChild(input);
+
+      alert("Please select your date of birth from the visible calendar.");
+
+      let enteredDate = await new Promise((resolve) => {
+        input.addEventListener("change", () => resolve(new Date(input.value)));
+        input.click();
+      });
+
+      input.remove();
+
+      if (!studentsz[roll] || !studentsz[roll].DOB) {
+        alert("Your roll number does not exist in our records.");
+        return;
+      }
+
+      const dobStr = enteredDate.toISOString().split("T")[0];
+      if (dobStr !== studentsz[roll].DOB) {
+        alert("You have been banned due to inconsistent information entry.");
+        await ban();
+        return;
+      }
     } else {
-     alert("Then please enter your correct roll number.");
+      alert("Then please enter your correct roll number.");
+      return;
     }
-   }
-   if (name.length < 4) {
+  }
+
+  if (name.length < 4) {
     alert("Please enter your complete and correct name.");
     return;
-   }
-   if (fName.length < 4) {
+  }
+
+  if (fName.length < 4) {
     alert("Please enter a complete and correct father name.");
     return;
-   }
-   if (!same(name, studentsz[roll].NAME) && !same(fName, studentsz[roll].F_NAME)) {
+  }
+
+  if (!studentsz[roll] || (!same(name, studentsz[roll].NAME) && !same(fName, studentsz[roll].F_NAME))) {
     alert("Please make sure that name and father name is correct according to your B-Form.");
-   }
-   if (ph && (ph.length < 10 || ph.length > 14)) {
+    return;
+  }
+
+  if (ph && (ph.length < 10 || ph.length > 14)) {
     alert("Please enter a properly formatted phone number.");
     return;
-   }
-   let saved = localStorage.getItem("roll");
-   if (!roll || !name || !fName || !major || !shift || !center || isNaN(boardRn)) {
+  }
+
+  if (!roll || !name || !fName || !major || !shift || !center || isNaN(boardRn)) {
     $("uploadAlert").innerText = "Please fill all required fields.";
     return;
-   }
-   let doChange = true;
-   if (localStorage.getItem("myRoll") == roll && JSON.parse(localStorage.getItem("")).boardRn == boardRn) {
-    doChange = false;
-   }
-   let changed = parseInt(localStorage.getItem("changed") || "0");
-   if (changed == 1 && doChange) {
+  }
+
+  const saved = localStorage.getItem("roll");
+  const changed = parseInt(localStorage.getItem("changed") || "0");
+  const doChange = !(localStorage.getItem("myRoll") == roll && parseInt(localStorage.getItem("myBoardRn")) == boardRn);
+
+  if (changed == 1 && doChange) {
     if (!confirm("You are only allowed to change your roll number once. So please make sure it is correct.")) {
-     return;
+      return;
     }
-   }
-   if (changed > 1 && doChange) {
+  }
+
+  if (changed > 1 && doChange) {
     alert("You have been banned due to inconsistent information entry.");
     await ban();
     return;
-   }
-   let data = {
+  }
+
+  let data = {
     name,
     f_name: fName,
     major,
@@ -403,19 +437,16 @@
     center,
     boardRn,
     uploadDate: Date.now()
-   };
-   if (saved) {
-    data.saved = saved;
-   }
-   if (ph) {
-    data.phone = ph;
-   }
-   localStorage.setItem("formCache", JSON.stringify(data));
-   try {
+  };
+
+  if (saved) data.saved = saved;
+  if (ph) data.phone = ph;
+
+  localStorage.setItem("formCache", JSON.stringify(data));
+
+  try {
     await set(ref(db, "fixstudents/" + roll), data);
-    let changed = localStorage.getItem("changed") || "0";
-    changed = parseInt(changed) + doChange ? 1: 0;
-    localStorage.setItem("changed", changed);
+    if (doChange) localStorage.setItem("changed", (changed + 1).toString());
     localStorage.setItem("uploadedd", "true");
     localStorage.setItem("myRoll", roll);
     localStorage.setItem("myBoardRn", boardRn);
@@ -423,10 +454,10 @@
     $("mainSection").classList.remove("hidden");
     $("searchBoardRn").value = boardRn;
     alert("Upload successful!");
-   } catch (e) {
+  } catch (e) {
     $("uploadAlert").innerText = "Upload failed: " + e.message;
-   }
-  };
+  }
+};
 
   $("findNearby").onclick = async () => {
    const searchRn = parseInt($("searchBoardRn").value);
