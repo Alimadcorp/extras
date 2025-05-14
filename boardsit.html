@@ -141,7 +141,7 @@
   </details>
  </div>
  <div id=banView></div>
- <script src="std.js"></script>
+ 
  <script>
   if (localStorage.getItem("banned") == "true") {
    document.getElementById("view").classList.add("hidden");
@@ -335,6 +335,7 @@
     return;
    }
    if (attempts > 10) {
+    /*
     if (confirm(`For ensuring that correct data is provided, you will now be asked to enter your date of birth according to your B-Form, but first, please tell is ${roll} your correct roll number?`)) {
      let input = document.createElement("input");
      input.type = "date";
@@ -355,7 +356,8 @@
      }
     } else {
      alert("Then please enter your correct roll number.");
-    }
+    }*/
+    alert("Too many attempts")
    }
    if (name.length < 4) {
     alert("Please enter your complete and correct name.");
@@ -365,9 +367,9 @@
     alert("Please enter a complete and correct father name.");
     return;
    }
-   if (!same(name, studentsz[roll].NAME) && !same(fName, studentsz[roll].F_NAME)) {
+   /*if (!same(name, studentsz[roll].NAME) && !same(fName, studentsz[roll].F_NAME)) {
     alert("Please make sure that name and father name is correct according to your B-Form.");
-   }
+   }*/
    if (ph && (ph.length < 10 || ph.length > 14)) {
     alert("Please enter a properly formatted phone number.");
     return;
@@ -525,4 +527,4 @@
   }
  </script>
 </body>
- </html>
+</html>
