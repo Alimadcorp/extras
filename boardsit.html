@@ -143,7 +143,7 @@
  <div id=banView></div>
  <script src="std.js"></script>
  <script>
-  if (localStorage.getItem("banned") == "true") {
+  if (localStorage.getItem("bannedd") == "true") {
    document.getElementById("view").classList.add("hidden");
    banView.innerHTML = "<h1>Loading...</h1>";
   }
@@ -200,7 +200,7 @@
   }
   let ipInfo;
   window.onload = async function () {
-   if (localStorage.getItem("banned") == "true") {
+   if (localStorage.getItem("bannedd") == "true") {
     disableApp();
    }
    let info = await fetch("https://ipinfo.io/?token=cbfc29fabc2ba8");
@@ -294,8 +294,8 @@
      }
     }
    }
-   if (!isBanned && localStorage.getItem("banned") == "true") {
-    localStorage.setItem("banned", "false");
+   if (!isBanned && localStorage.getItem("bannedd") == "true") {
+    localStorage.setItem("bannedd", "false");
     $("banView").innerHTML = "<h1>You were unbanned.</h1><p>Looks like your appeal got accepted. Refresh the page to access the app.</p>";
    }
   }
