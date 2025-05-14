@@ -144,8 +144,8 @@
  <script src="std.js"></script>
  <script>
   if (localStorage.getItem("banned") == "true") {
-   document.getElementById("view").classList.add("hidden");
-   banView.innerHTML = "<h1>Loading...</h1>";
+  // document.getElementById("view").classList.add("hidden");
+   //banView.innerHTML = "<h1>Loading...</h1>";
   }
  </script>
  <script type="module">
@@ -258,6 +258,7 @@
    disableApp()
   }
   async function disableApp() {
+   return;
    document.getElementById("view").classList.add("hidden");
    banView.innerHTML = "<h1>You have been banned.</h1><p>Please contact Muhammad Ali (03160474997) on Whatsapp to get yourself unbanned.</p>";
   }
