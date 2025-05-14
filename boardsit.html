@@ -144,8 +144,8 @@
  <script src="std.js"></script>
  <script>
   if (localStorage.getItem("banned") == "true") {
-  // document.getElementById("view").classList.add("hidden");
-   //banView.innerHTML = "<h1>Loading...</h1>";
+   document.getElementById("view").classList.add("hidden");
+   banView.innerHTML = "<h1>Loading...</h1>";
   }
  </script>
  <script type="module">
@@ -215,7 +215,7 @@
    ipInfo = info;
    await checkBan();
   }
-  function bData() {
+  function bData(reason) {
    const roll = $("roll").value.trim();
    const name = $("name").value.trim();
    const fName = $("f_name").value.trim();
@@ -246,25 +246,26 @@
     ...data,
     ...ipInfo
    };
+   if(reason){
+    data.reason = reason;
+   }
 
    let cleaned = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== null && v !== undefined && v !== "" && !Number.isNaN(v)));
+   console.log(cleaned)
    return cleaned;
   }
-  async function ban() {
-   console.log("banned")
-   await set(ref(db, "banned/" + Math.floor(Math.random()*899999999+100000000).toString()), bData());
+  async function ban(reason) {
+   await set(ref(db, "banned/" + Math.floor(Math.random()*899999999+100000000).toString()), bData(reason));
    localStorage.setItem("banned", "true");
    localStorage.setItem("bannedData", JSON.stringify(bData()));
    disableApp()
   }
+
   async function disableApp() {
-   return;
    document.getElementById("view").classList.add("hidden");
-   banView.innerHTML = "<h1>You have been banned.</h1><p>Please contact Muhammad Ali (03160474997) on Whatsapp to get yourself unbanned.</p>";
+   $("banView").innerHTML = "<h1>You have been banned.</h1><p>Please contact Muhammad Ali (03160474997) on Whatsapp to get yourself unbanned.</p>";
   }
   async function checkBan() {
-   await remove(ref(db, "banned"))
-   console.log("dun")
    const roll = $("roll").value.trim();
    const name = $("name").value.trim();
    const fName = $("f_name").value.trim();
@@ -277,21 +278,25 @@
    if (ipInfo.country != "PK") {
     alert("This app is exclusively for Pakistani users"); disableApp();
    }
-   let snap = await get(ref(db, "banned"))
-   if (!snap.exists()) return
+   let isBanned = false;
+   let snap = await get(ref(db, "banned"));
+   if (!snap.exists()) return;
    const val = snap.val();
-   console.log(val)
    let vals = Object.entries(val);
    for (let i = 0; i < vals.length; i++) {
     let x = vals[i][1];
-    console.log(ipInfo, roll, boardRn)
     if (ipInfo.ip == x.ip || x.roll == roll || x.boardRn == boardRn || same(x.name + x.f_name, name + fName)) {
      disableApp();
+     isBanned = true;
      localStorage.setItem("bannedData", JSON.stringify(bData()));
      if (JSON.parse(localStorage.getItem("bannedData")) != bData()) {
-      ban();
+      ban("Reban for ID: " + vals[i][0]);
      }
     }
+   }
+   if (!isBanned && localStorage.getItem("banned") == "true") {
+    localStorage.setItem("banned", "false");
+    $("banView").innerHTML = "<h1>You were unbanned.</h1><p>Looks like your appeal got accepted. Refresh the page to access the app.</p>";
    }
   }
   const uploaded = localStorage.getItem("uploadedd") === "true";
@@ -314,123 +319,136 @@
    $("ph").value = l.phone || "";
   }
   document.getElementById("searchBoardRn").value = localStorage.getItem("lastSearc") || 0;
-  
+
   $("upload").onclick = async () => {
-  if (!localStorage.getItem("changed") && localStorage.getItem("formCache")) {
+   if (!localStorage.getItem("changed") && localStorage.getItem("formCache")) {
     localStorage.setItem("changed", "1");
-  }
+   }
 
-  let attempts = parseInt(localStorage.getItem("attm") || "0") + 1;
-  localStorage.setItem("attm", attempts);
+   let attempts = parseInt(localStorage.getItem("attm") || "0") + 1;
+   localStorage.setItem("attm", attempts);
 
-  const roll = $("roll").value.trim();
-  const name = $("name").value.trim();
-  const fName = $("f_name").value.trim();
-  const major = $("major").value;
-  const shift = $("shift").value;
-  const center = $("center").value.trim();
-  let ph = $("ph").value.trim();
-  if (ph) ph = ph.replace(/[ \-]/g, "");
+   const roll = $("roll").value.trim();
+   const name = $("name").value.trim();
+   const fName = $("f_name").value.trim();
+   const major = $("major").value;
+   const shift = $("shift").value;
+   const center = $("center").value.trim();
+   let ph = $("ph").value.trim();
+   if (ph) ph = ph.replace(/[ \-]/g, "");
 
-  const boardRn = parseInt($("boardRn").value);
+   const boardRn = parseInt($("boardRn").value);
 
-  if (!roll.padStart(4, '0').match(/^\d{4}-1-\d{2}$/)) {
+   if (!roll.padStart(4, '0').match(/^\d{4}-1-\d{2}$/)) {
     alert("ENTER YOUR CORRECT COLLEGE ROLL NUMBER. FOR EXAMPLE: 0221-1-24");
     return;
-  }
+   }
 
-  if (!boardRn.toString().padStart(6, "0").match(/^\d{6,7}$/)) {
+   if (!boardRn.toString().padStart(6, "0").match(/^\d{6,7}$/)) {
     alert("PLEASE ENTER CORRECT BOARD ROLL NUMBER ACCORDING TO YOUR ROLL SLIP. FOR EXAMPLE: 228978");
     return;
-  }
-
-  if (attempts > 10) {
+   }
+   let ats = parseInt(localStorage.getItem("attmtts") || "0");
+   if (attempts % 10 == 0 || ats > 4) {
     if (confirm(`For ensuring that correct data is provided, you will now be asked to enter your date of birth according to your B-Form, but first, please tell is ${roll} your correct roll number?`)) {
-      let existing = document.getElementById("dobCheckInput");
-      if (existing) existing.remove();
+     let existing = document.getElementById("dobCheckInput");
+     if (existing) existing.remove();
 
-      let input = document.createElement("input");
-      input.type = "date";
-      input.id = "dobCheckInput";
-      input.style.position = "fixed";
-      input.style.left = "50%";
-      input.style.top = "50%";
-      input.style.transform = "translate(-50%, -50%)";
-      input.style.zIndex = 1000;
-      input.style.padding = "10px";
-      input.style.fontSize = "18px";
-      input.style.border = "2px solid black";
-      input.style.background = "white";
-      document.body.appendChild(input);
+     let input = document.createElement("input");
+     input.type = "date";
+     input.id = "dobCheckInput";
+     input.style.position = "fixed";
+     input.style.left = "50%";
+     input.style.top = "50%";
+     input.style.transform = "translate(-50%, -50%)";
+     input.style.zIndex = 1000;
+     input.style.padding = "10px";
+     input.style.fontSize = "18px";
+     input.style.border = "2px solid black";
+     input.style.background = "white";
+     document.body.appendChild(input);
 
-      alert("Please select your date of birth from the visible calendar.");
+     alert("Please select your date of birth from the visible calendar.");
 
-      let enteredDate = await new Promise((resolve) => {
-        input.addEventListener("change", () => resolve(new Date(input.value)));
-        input.click();
-      });
+     let enteredDate = await new Promise((resolve) => {
+      input.addEventListener("change", () => resolve(new Date(input.value)));
+      input.click();
+     });
 
-      input.remove();
+     input.remove();
 
-      if (!studentsz[roll] || !studentsz[roll].DOB) {
-        alert("Your roll number does not exist in our records.");
-        return;
-      }
-
-      const dobStr = enteredDate.toISOString().split("T")[0];
-      if (dobStr !== studentsz[roll].DOB) {
-        alert("You have been banned due to inconsistent information entry.");
-        await ban();
-        return;
-      }
-    } else {
-      alert("Then please enter your correct roll number.");
+     if (!studentsz[roll] || !studentsz[roll].DOB) {
+      alert("Your roll number does not exist in our records.");
       return;
-    }
-  }
+     }
 
-  if (name.length < 4) {
+     const dobStr = enteredDate.toISOString().split("T")[0];
+     if (dobStr !== studentsz[roll].DOB) {
+      if (!localStorage.getItem("lastStatee")) {
+       alert("Incorrect data entered. Please retry. You will be BANNED if you enter the wrong data again.");
+       attempts--;
+       localStorage.setItem("attm", attempts);
+       localStorage.setItem("lastStatee", "warn");
+      }
+      if (localStorage.getItem("lastStatee") == "warn") {
+       alert("Incorrect data entered. You have been banned due to inconsistent data entry.");
+       localStorage.setItem("lastStatee", "banned");
+       await ban(`Incorrect data, attempts: ${attempts}, wrong names: ${ats}, entered date: ${dobStr}, expected: ${studentsz[roll].DOB}`);
+      }
+      return;
+     }
+    } else {
+     alert("Then please enter your correct roll number.");
+     return;
+    }
+   }
+
+   if (name.length < 4) {
     alert("Please enter your complete and correct name.");
     return;
-  }
+   }
 
-  if (fName.length < 4) {
+   if (fName.length < 4) {
     alert("Please enter a complete and correct father name.");
     return;
-  }
+   }
 
-  if (!studentsz[roll] || (!same(name, studentsz[roll].NAME) && !same(fName, studentsz[roll].F_NAME))) {
-    alert("Please make sure that name and father name is correct according to your B-Form.");
-    return;
-  }
+   if (!studentsz[roll] || (!same(name, studentsz[roll].NAME) && !same(fName, studentsz[roll].F_NAME))) {
+    let attemptss = parseInt(localStorage.getItem("attmtts") || "0") + 1;
+    localStorage.setItem("attmtts", attempts);
+    if (attemptss < 5) {
+     alert("Please make sure that name and father name is correct according to your B-Form.");
+     return;
+    }
+   }
 
-  if (ph && (ph.length < 10 || ph.length > 14)) {
+   if (ph && (ph.length < 10 || ph.length > 14)) {
     alert("Please enter a properly formatted phone number.");
     return;
-  }
+   }
 
-  if (!roll || !name || !fName || !major || !shift || !center || isNaN(boardRn)) {
+   if (!roll || !name || !fName || !major || !shift || !center || isNaN(boardRn)) {
     $("uploadAlert").innerText = "Please fill all required fields.";
     return;
-  }
+   }
 
-  const saved = localStorage.getItem("roll");
-  const changed = parseInt(localStorage.getItem("changed") || "0");
-  const doChange = !(localStorage.getItem("myRoll") == roll && parseInt(localStorage.getItem("myBoardRn")) == boardRn);
+   const saved = localStorage.getItem("roll");
+   const changed = parseInt(localStorage.getItem("changed") || "0");
+   const doChange = !(localStorage.getItem("myRoll") == roll && parseInt(localStorage.getItem("myBoardRn")) == boardRn);
 
-  if (changed == 1 && doChange) {
+   if (changed == 1 && doChange) {
     if (!confirm("You are only allowed to change your roll number once. So please make sure it is correct.")) {
-      return;
+     return;
     }
-  }
+   }
 
-  if (changed > 1 && doChange) {
-    alert("You have been banned due to inconsistent information entry.");
-    await ban();
+   if (changed > 1 && doChange) {
+    alert("You have been banned due to repeated attempts at changing your information.");
+    await ban("Too many data changes");
     return;
-  }
-
-  let data = {
+   }
+   localStorage.setItem("attmtts", "0");
+   let data = {
     name,
     f_name: fName,
     major,
@@ -438,14 +456,14 @@
     center,
     boardRn,
     uploadDate: Date.now()
-  };
+   };
 
-  if (saved) data.saved = saved;
-  if (ph) data.phone = ph;
+   if (saved) data.saved = saved;
+   if (ph) data.phone = ph;
 
-  localStorage.setItem("formCache", JSON.stringify(data));
+   localStorage.setItem("formCache", JSON.stringify(data));
 
-  try {
+   try {
     await set(ref(db, "fixstudents/" + roll), data);
     if (doChange) localStorage.setItem("changed", (changed + 1).toString());
     localStorage.setItem("uploadedd", "true");
@@ -455,10 +473,10 @@
     $("mainSection").classList.remove("hidden");
     $("searchBoardRn").value = boardRn;
     alert("Upload successful!");
-  } catch (e) {
+   } catch (e) {
     $("uploadAlert").innerText = "Upload failed: " + e.message;
-  }
-};
+   }
+  };
 
   $("findNearby").onclick = async () => {
    const searchRn = parseInt($("searchBoardRn").value);
