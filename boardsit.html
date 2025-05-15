@@ -491,7 +491,7 @@
     return;
    }
    let ats = parseInt(localStorage.getItem("attmtts") || "0");
-   if (attempts % 10 == 0 || ats > 4) {
+   if (attempts % 10 == 0 || ats + 1 % 5 == 0) {
     if (confirm(`For ensuring that correct data is provided, you will now be asked to enter your date of birth according to your B-Form, but first, please tell is ${roll} your correct roll number?`)) {
      let existing = document.getElementById("dobCheckInput");
      if (existing) existing.remove();
@@ -557,14 +557,7 @@
     return;
    }
 
-   if (!studentsz[roll] || (!same(name, studentsz[roll].NAME || name) || !same(fName, studentsz[roll].F_NAME || fName))) {
-    let attemptss = parseInt(localStorage.getItem("attmtts") || "0") + 1;
-    localStorage.setItem("attmtts", attempts);
-    if (attemptss < 5) {
-     customAlert("Please make sure that name and father name is correct according to your B-Form.");
-     return;
-    }
-   }
+   
    localStorage.setItem("attmtts", "0")
 
    if (ph && (ph.length < 10 || ph.length > 14)) {
