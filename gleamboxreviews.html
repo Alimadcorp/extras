@@ -1,0 +1,67 @@
+<html>
+<head>
+  <title>Gleam Box Reviews</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: sans-serif;
+      padding: 1em;
+    }
+    button {
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 0.5em 1em;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-bottom: 1em;
+    }
+    #reviews p {
+      margin: 0.5em 0;
+      padding: 0.5em;
+      border-bottom: 1px solid #333;
+    }
+    strong {
+      color: #0af;
+    }
+    i {
+      font-style: normal;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div id="reviews"></div>
+  <script>
+    function timeAgo(iso) {
+      const sec = Math.floor((new Date() - new Date(iso)) / 1000);
+      if (sec < 60) return sec + "s ago";
+      const min = Math.floor(sec / 60);
+      if (min < 60) return min + "m ago";
+      const hr = Math.floor(min / 60);
+      if (hr < 24) return hr + "h ago";
+      const day = Math.floor(hr / 24);
+      if (day < 7) return day + "d ago";
+      const week = Math.floor(day / 7);
+      return week + "w ago";
+    }
+
+    async function fetchReviews() {
+      reviews.innerHTML = "";
+      const res = await fetch("https://madlog.vercel.app/api/pull?channel=gleamboxreview");
+      let data = (await res.json()).logs;
+      for (let i = 0; i < data.length; i++) {
+        let stringy = data[i].text.replace(/Review \(.*\): /, "");
+        let Username = data[i].text.split("Review (")[1].split("):")[0];
+        let Details = decodeURIComponent(stringy);
+        let ago = timeAgo(data[i].time);
+        reviews.innerHTML += `<p><strong>${Username}<i> (${ago}):</i> </strong>${Details}</p>`;
+      }
+    }
+
+    window.onload = fetchReviews;
+  </script>
+</body>
+</html>
