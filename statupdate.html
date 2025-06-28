@@ -189,9 +189,11 @@
         <h3>Update Hackclub Slack Stats</h3>
         
         <div class="control-panel">
-            <button id="startButton">Start First Request</button>
-            <button id="secondRequestButton" disabled>Send Second Request</button>
-        </div>
+  <button id="startButton">Start First Request</button>
+  <button id="secondRequestButton" disabled>Send Second Request</button>
+  <button id="finalRequestButton" disabled>Finalize & Merge</button>
+</div>
+
         
         <div class="timer-display">
             <div class="timer-box">
@@ -221,196 +223,130 @@
     </div>
 
     <script>
-        // DOM Elements
-        const statusElement = document.getElementById("status");
-        const timeElapsedElement = document.getElementById("timeElapsed");
-        const timeRemainingElement = document.getElementById("timeRemaining");
-        const startButton = document.getElementById("startButton");
-        const secondRequestButton = document.getElementById("secondRequestButton");
-        const responseLogElement = document.getElementById("responseLog");
-        const requestStatusIndicator = document.getElementById("requestStatusIndicator");
-        const initTimeElement = document.getElementById("initTime");
+  const statusElement = document.getElementById("status");
+  const timeElapsedElement = document.getElementById("timeElapsed");
+  const timeRemainingElement = document.getElementById("timeRemaining");
+  const startButton = document.getElementById("startButton");
+  const secondRequestButton = document.getElementById("secondRequestButton");
+  const finalRequestButton = document.getElementById("finalRequestButton");
+  const responseLogElement = document.getElementById("responseLog");
+  const requestStatusIndicator = document.getElementById("requestStatusIndicator");
+  const initTimeElement = document.getElementById("initTime");
 
-        // State variables
-        let startTime = null;
-        let timerInterval = null;
-        let requestCount = 0;
-        let activeRequest = false;
+  let startTime = null;
+  let timerInterval = null;
+  let requestCount = 0;
+  let activeRequest = false;
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            initTimeElement.textContent = new Date().toLocaleTimeString();
-        });
+  document.addEventListener('DOMContentLoaded', () => {
+    initTimeElement.textContent = new Date().toLocaleTimeString();
+  });
 
-        // Event Listeners
-        startButton.addEventListener("click", sendFirstRequest);
-        secondRequestButton.addEventListener("click", sendSecondRequest);
+  startButton.addEventListener("click", () => sendRequest("0", "Start First"));
+  secondRequestButton.addEventListener("click", () => sendRequest("1", "Second"));
+  finalRequestButton.addEventListener("click", () => sendRequest("2", "Final", true));
 
-        // Main functions
-        async function sendFirstRequest() {
-            if (activeRequest) return;
-            activeRequest = true;
-            updateRequestStatus(true);
-            
-            requestCount++;
-            const requestId = requestCount;
-            addLogEntry(`Initiating first request (ID: ${requestId})...`, 'info');
-            
-            startTime = Date.now();
-            startTimer();
-            updateButtonStates();
-            
-            try {
-                updateStatus(`Sending first request (ID: ${requestId})...`);
-                
-                const response = await fetch("https://slackinhackin.vercel.app/api/fetch", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ position: "0" })
-                });
+  async function sendRequest(position, label, finalize = false) {
+    if (activeRequest) return;
+    activeRequest = true;
+    updateRequestStatus(true);
 
-                const data = await response.json();
-                const duration = (Date.now() - startTime) / 1000;
-                
-                if (!response.ok) {
-                    throw new Error(data.message || "First request failed");
-                }
-                
-                updateStatus(`First request (ID: ${requestId}) successful in ${duration.toFixed(3)}s. Waiting for 60 seconds...`);
-                addLogEntry(`First request (ID: ${requestId}) completed in ${duration.toFixed(3)}s`, 'success', data);
-                
-                secondRequestButton.disabled = false;
-                
-            } catch (error) {
-                const duration = (Date.now() - startTime) / 1000;
-                updateStatus(`Error in first request (ID: ${requestId}): ${error.message}`);
-                addLogEntry(`First request (ID: ${requestId}) failed after ${duration.toFixed(3)}s`, 'error', { error: error.message });
-            } finally {
-                activeRequest = false;
-                updateRequestStatus(false);
-            }
-        }
+    requestCount++;
+    const requestId = requestCount;
+    addLogEntry(`Initiating ${label} Request (ID: ${requestId})...`, 'info');
 
-        async function sendSecondRequest() {
-            if (activeRequest) return;
-            activeRequest = true;
-            updateRequestStatus(true);
-            
-            requestCount++;
-            const requestId = requestCount;
-            addLogEntry(`Initiating second request (ID: ${requestId})...`, 'info');
-            
-            try {
-                updateStatus(`Sending second request (ID: ${requestId})...`);
-                const requestStartTime = Date.now();
-                
-                const response = await fetch("https://slackinhackin.vercel.app/api/fetch", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ position: "1", randomize: "yes" })
-                });
+    if (position === "0") {
+      startTime = Date.now();
+      startTimer();
+    }
 
-                const data = await response.json();
-                const duration = (Date.now() - requestStartTime) / 1000;
-                const totalDuration = (Date.now() - startTime) / 1000;
-                
-                if (!response.ok) {
-                    throw new Error(data.message || "Second request failed");
-                }
-                
-                updateStatus(`Second request (ID: ${requestId}) successful in ${duration.toFixed(3)}s (total: ${totalDuration.toFixed(3)}s)`);
-                addLogEntry(`Second request (ID: ${requestId}) completed in ${duration.toFixed(3)}s`, 'success', data);
-                
-                // Reset the timer and buttons
-                clearInterval(timerInterval);
-                updateTimerDisplay(60, 60);
-                secondRequestButton.disabled = true;
-                
-            } catch (error) {
-                const duration = (Date.now() - startTime) / 1000;
-                updateStatus(`Error in second request (ID: ${requestId}): ${error.message}`);
-                addLogEntry(`Second request (ID: ${requestId}) failed after ${duration.toFixed(3)}s`, 'error', { error: error.message });
-            } finally {
-                activeRequest = false;
-                updateRequestStatus(false);
-            }
-        }
+    try {
+      updateStatus(`Sending ${label} Request (ID: ${requestId})...`);
 
-        // Helper functions
-        function startTimer() {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                const elapsed = (Date.now() - startTime) / 1000;
-                const remaining = Math.max(0, 60 - elapsed);
-                updateTimerDisplay(elapsed, remaining);
-            }, 10); // Update every 10ms for smooth display
-        }
+      const response = await fetch("https://slackinhackin.vercel.app/api/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ position, randomize: finalize ? "yes" : undefined })
+      });
 
-        function updateTimerDisplay(elapsed, remaining) {
-            timeElapsedElement.textContent = `${elapsed.toFixed(3)}s`;
-            if(remaining >= 0)
-              timeRemainingElement.textContent = `${remaining.toFixed(3)}s`;
-            
-            // Visual feedback when time is running out
-            if (remaining < 10) {
-                timeRemainingElement.style.color = '#f55';
-            } else {
-                timeRemainingElement.style.color = 'var(--primary)';
-            }
-        }
+      const data = await response.json();
+      const duration = (Date.now() - startTime) / 1000;
 
-        function updateStatus(message) {
-            statusElement.textContent = message;
-        }
+      if (!response.ok) throw new Error(data.message || `${label} request failed`);
 
-        function updateButtonStates() {
-            startButton.disabled = startTime !== null;
-            secondRequestButton.disabled = startTime === null;
-        }
+      updateStatus(`${label} Request (ID: ${requestId}) successful in ${duration.toFixed(3)}s`);
+      addLogEntry(`${label} Request (ID: ${requestId}) completed in ${duration.toFixed(3)}s`, 'success', data);
 
-        function updateRequestStatus(isActive) {
-            if (isActive) {
-                requestStatusIndicator.classList.add('active-request');
-                requestStatusIndicator.style.color = '#ff0';
-            } else {
-                requestStatusIndicator.classList.remove('active-request');
-                requestStatusIndicator.style.color = '#0f0';
-            }
-        }
+      if (position === "0") secondRequestButton.disabled = false;
+      if (position === "1") finalRequestButton.disabled = false;
+      if (position === "2") {
+        clearInterval(timerInterval);
+        updateTimerDisplay(60, 60);
+        startButton.disabled = true;
+        secondRequestButton.disabled = true;
+        finalRequestButton.disabled = true;
+      }
 
-        function addLogEntry(message, type = 'info', data = null) {
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-entry ${type}`;
-            
-            const timeElement = document.createElement('div');
-            timeElement.className = 'log-time';
-            timeElement.textContent = `${new Date().toLocaleTimeString()} - `;
-            
-            const contentElement = document.createElement('div');
-            contentElement.className = 'log-content';
-            contentElement.textContent = message;
-            
-            logEntry.appendChild(timeElement);
-            logEntry.appendChild(contentElement);
-            
-            if (data) {
-                const jsonElement = document.createElement('pre');
-                jsonElement.className = 'json-view';
-                jsonElement.textContent = JSON.stringify(data, null, 2);
-                logEntry.appendChild(jsonElement);
-            }
-            
-            responseLogElement.insertBefore(logEntry, responseLogElement.firstChild.nextSibling);
-            
-            // Auto-scroll to new entries
-            if (responseLogElement.scrollTop === 0) {
-                responseLogElement.scrollTop = 0;
-            }
-        }
-    </script>
+    } catch (error) {
+      const duration = (Date.now() - startTime) / 1000;
+      updateStatus(`Error in ${label} Request (ID: ${requestId}): ${error.message}`);
+      addLogEntry(`${label} Request (ID: ${requestId}) failed after ${duration.toFixed(3)}s`, 'error', { error: error.message });
+    } finally {
+      activeRequest = false;
+      updateRequestStatus(false);
+    }
+  }
+
+  function startTimer() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const remaining = Math.max(0, 60 - elapsed);
+      updateTimerDisplay(elapsed, remaining);
+    }, 10);
+  }
+
+  function updateTimerDisplay(elapsed, remaining) {
+    timeElapsedElement.textContent = `${elapsed.toFixed(3)}s`;
+    timeRemainingElement.textContent = `${remaining.toFixed(3)}s`;
+    timeRemainingElement.style.color = remaining < 10 ? '#f55' : 'var(--primary)';
+  }
+
+  function updateStatus(message) {
+    statusElement.textContent = message;
+  }
+
+  function updateRequestStatus(isActive) {
+    requestStatusIndicator.classList.toggle('active-request', isActive);
+    requestStatusIndicator.style.color = isActive ? '#ff0' : '#0f0';
+  }
+
+  function addLogEntry(message, type = 'info', data = null) {
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry ${type}`;
+
+    const timeElement = document.createElement('div');
+    timeElement.className = 'log-time';
+    timeElement.textContent = `${new Date().toLocaleTimeString()} - `;
+
+    const contentElement = document.createElement('div');
+    contentElement.className = 'log-content';
+    contentElement.textContent = message;
+
+    logEntry.appendChild(timeElement);
+    logEntry.appendChild(contentElement);
+
+    if (data) {
+      const jsonElement = document.createElement('pre');
+      jsonElement.className = 'json-view';
+      jsonElement.textContent = JSON.stringify(data, null, 2);
+      logEntry.appendChild(jsonElement);
+    }
+
+    responseLogElement.insertBefore(logEntry, responseLogElement.firstChild.nextSibling);
+    responseLogElement.scrollTop = 0;
+  }
+</script>
+
 </body>
 </html> 
