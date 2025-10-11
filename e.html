@@ -1,0 +1,220 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Substitution Cipher</title>
+<style>
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.alimad.co/f/geist.woff2') format('woff2');
+  font-display: swap;
+}
+:root{
+  --bg:#030711;
+  --card:#050a18;
+  --accent:#1e90ff;
+  --border:#10182c;
+  --text:#d8e0f8;
+  font-family:'Geist',system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  margin:0;display:flex;justify-content:center;align-items:center;
+  min-height:100vh;padding:16px;
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  width:100%;max-width:500px;
+  box-shadow:0 0 40px rgba(0,0,0,.6);
+  padding:20px;
+}
+h2{text-align:center;margin:0 0 16px;font-weight:600;}
+textarea,button{
+  width:100%;font-family:inherit;font-size:15px;border:none;border-radius:8px;
+}
+textarea{
+  background:#070f23;color:var(--text);
+  padding:10px;resize:vertical;min-height:100px;
+}
+button{
+  background:var(--accent);color:white;padding:10px;margin-top:10px;
+}
+button.secondary{background:#29324a;}
+pre{
+  background:#070f23;color:var(--text);padding:10px;border-radius:8px;min-height:80px;
+  white-space:pre-wrap;word-break:break-word;
+}
+.footer{text-align:center;margin-top:12px;font-size:12px;color:#8da1c6;}
+@media(max-width:480px){.card{padding:16px;}}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>Substitution Cipher</h2>
+  <label>Input</label>
+  <textarea id="input" placeholder="Enter text here"></textarea>
+  <button id="encrypt">Encrypt</button>
+  <button id="decrypt" class="secondary">Decrypt</button>
+  <pre id="output"></pre>
+  <div class="footer">Hardcoded mapping demo — dark & slick</div>
+</div>
+<script>
+const mappingText=`A: 41\nN: 52\n0: 18\nB: 42\nO: 53\n1: 48\nC: 43\nP: 231\n2: 128\nD: 121\nQ: 232\n3: 138\nE: 15\nR: 26\n4: 218\nF: 123\nS: 34\n5: 58\nG: 131\nT: 312\n6: 238\nH: 132\nU: 313\n7: 318\nI: 16\nV: 321\n8: 328\nJ: 24\nW: 35\n9: 68\nK: 212\nX: 323\nL: 213\nY: 61\nM: 51\nZ: 62`;
+
+function parseMapping(text) {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const enc = new Map(), dec = new Map();
+    for (const line of lines) {
+        const m = line.match(/^(.+?)\s*:\s*(.+)$/);
+        if (!m) continue;
+        enc.set(m[1], m[2]);
+        dec.set(m[2], m[1]);
+    }
+    const encKeys = [...enc.keys()].sort((a, b) => b.length - a.length);
+    const decKeys = [...dec.keys()].sort((a, b) => b.length - a.length);
+    return { enc, dec, encKeys, decKeys };
+}
+
+const state = parseMapping(mappingText);
+
+function applySquish(text) {
+    return text.replace(/11/g, '4').replace(/22/g, '5').replace(/33/g, '6').replace(/ /g, '0');
+}
+
+function applySquash(text) {
+    return text.replace(/4/g, '11').replace(/22/g, '5').replace(/33/g, '6').replace(/0/g, ' ');
+}
+
+function replaceGreedy(text, keys, map) {
+    let out = '';
+    for (let i = 0; i < text.length;) {
+        let matched = false;
+        for (const k of keys) {
+            if (text.startsWith(k, i)) {
+                out += map.get(k);
+                i += k.length;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            out += text[i];
+            i++;
+        }
+    }
+    return out;
+}
+
+// New intelligent decryption with selective unsquishing
+function intelligentDecrypt(text) {
+    let result = '';
+    let i = 0;
+    
+    while (i < text.length) {
+        let found = false;
+        
+        // Try to decode with current text
+        for (const key of state.decKeys) {
+            if (text.startsWith(key, i)) {
+                result += state.dec.get(key);
+                i += key.length;
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            // If we can't decode, check if current character is 4,5,6 that might need unsquishing
+            const currentChar = text[i];
+            if (currentChar === '4' || currentChar === '5' || currentChar === '6') {
+                // Try unsquishing this character
+                const unsquishedChar = currentChar === '4' ? '11' : 
+                                     currentChar === '5' ? '22' : '33';
+                
+                // Create a modified string with this character unsquished
+                const modifiedText = text.substring(0, i) + unsquishedChar + text.substring(i + 1);
+                
+                // Try to decode from current position with modified text
+                let unsquishFound = false;
+                for (const key of state.decKeys) {
+                    if (modifiedText.startsWith(key, i)) {
+                        result += state.dec.get(key);
+                        i += key.length;
+                        unsquishFound = true;
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!unsquishFound) {
+                    // If unsquishing didn't help, try backtracking and unsquishing previous characters
+                    let backtrackSuccess = false;
+                    for (let backtrack = 1; backtrack <= 3 && i - backtrack >= 0; backtrack++) {
+                        const backtrackPos = i - backtrack;
+                        const backtrackChar = text[backtrackPos];
+                        
+                        if (backtrackChar === '4' || backtrackChar === '5' || backtrackChar === '6') {
+                            const prevUnsquished = backtrackChar === '4' ? '11' : 
+                                                 backtrackChar === '5' ? '22' : '33';
+                            
+                            // Create text with previous character unsquished
+                            const backtrackText = text.substring(0, backtrackPos) + prevUnsquished + text.substring(backtrackPos + 1);
+                            
+                            // Try decoding from the backtrack position
+                            const partialResult = replaceGreedy(backtrackText.substring(0, i + 1), state.decKeys, state.dec);
+                            
+                            if (partialResult.length > result.length) {
+                                // Success - update result and position
+                                result = partialResult;
+                                i = backtrackPos + prevUnsquished.length;
+                                backtrackSuccess = true;
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!backtrackSuccess) {
+                        // If all else fails, keep the character as is and move on
+                        result += text[i];
+                        i++;
+                        found = true;
+                    }
+                }
+            } else {
+                // Not a 4,5,6 character, just keep it
+                result += text[i];
+                i++;
+                found = true;
+            }
+        }
+        
+        // Safety check to prevent infinite loops
+        if (!found) {
+            result += text[i];
+            i++;
+        }
+    }
+    
+    return applySquash(result);
+}
+
+document.getElementById('encrypt').onclick = () => {
+    const txt = document.getElementById('input').value.toUpperCase();
+    let out = replaceGreedy(txt, state.encKeys, state.enc);
+    document.getElementById('output').textContent = applySquish(out);
+};
+
+document.getElementById('decrypt').onclick = () => {
+    const txt = document.getElementById('input').value;
+    // Use the new intelligent decryption
+    document.getElementById('output').textContent = intelligentDecrypt(txt);
+};
+</script>
+</body>
+  </html>
