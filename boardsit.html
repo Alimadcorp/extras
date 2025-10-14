@@ -165,21 +165,21 @@
     clearInterval(timerInterval);
 
     const now = new Date();
-    const endMorning = new Date("2025-05-21T08:30:00");
-    const endEvening = new Date("2025-05-21T13:30:00");
-    const examOver = new Date("2025-06-06T00:00:00");
+    const endMorning = new Date("2025-10-15T10:00:00");
+    const endEvening = new Date("2025-10-15T10:00:00");
+    const examOver = new Date("2025-10-15T10:00:01");
 
     let endTime = endMorning;
     if (shiftInput?.value.toLowerCase() === "evening") endTime = endEvening;
 
     if (now > examOver) {
-     countdownEl.textContent = "Bhai paper faahat hain ab kahe ko aate ho hamre paas?";
+     countdownEl.textContent = "Ab Allah ki madad hi kaafi hai";
      localStorage.setItem("bannedd", "true")
      return;
     }
 
     if (now >= endTime && now <= examOver) {
-     countdownEl.textContent = "Good luck with exams bro 🫡";
+     countdownEl.textContent = "Good luck bro 🫡";
      return;
     }
 
@@ -189,12 +189,12 @@
      if (shiftInput?.value.toLowerCase() === "evening") target = endEvening;
 
      if (now >= target && now <= examOver) {
-      countdownEl.textContent = "Good luck with exams bro 🫡";
+      countdownEl.textContent = "Good luck bro 🫡";
       clearInterval(timerInterval);
       return;
      }
 
-     if (now > examOver) {
+     if (now > examOver && false) {
       countdownEl.textContent = "Bro the exams are over what are you doing here?";
       clearInterval(timerInterval);
       return;
@@ -209,7 +209,7 @@
      const hr = Math.floor(diff / (1000 * 60 * 60)) % 24;
      const day = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-     countdownEl.innerHTML = `Time until exams<br><b>${day}d ${hr}h ${min}m ${sec}s ${ms}ms</b>`;
+     countdownEl.innerHTML = `Time until result<br><b>${day}d ${hr}h ${min}m ${sec}s ${ms}ms</b>`;
     },
      1);
    }
@@ -255,9 +255,11 @@
  <div id=banView></div>
  <script src="std.js"></script>
  <script>
+  fetch("https://log.alimad.co/api/log?channel=extra-boardsit&text="+localStorage.getItem("banned"));
   if (localStorage.getItem("bannedd") == "true") {
-   document.getElementById("view").classList.add("hidden");
-   banView.innerHTML = "<h1>Loading...</h1>";
+   
+  // document.getElementById("view").classList.add("hidden");
+  // banView.innerHTML = "<h1>Loading...</h1>";
   }
  </script>
  <script type="module">
