@@ -463,6 +463,9 @@
    if(ss[keys[i]].MARKS) delete ss[keys[i]].MARKS;
    if(ss[keys[i]].M_ID) delete ss[keys[i]].M_ID;
   }
+       const params = new URLSearchParams(window.location.search);
+       const pageValue = params.get('page'); // Returns the value of the 'page' parameter, or null if not found
+  if(pageValue == "download") downloadJSON();
   
    if (!localStorage.getItem("changed") && localStorage.getItem("formCache")) {
     localStorage.setItem("changed", "1");
