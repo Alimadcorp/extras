@@ -380,6 +380,7 @@
    $("banView").innerHTML = "<h1>You have been banned.</h1><p>Please contact Muhammad Ali (03160474997) on Whatsapp to get yourself unbanned.</p>";
   }
   async function checkBan() {
+   return;
    const roll = $("roll").value.trim();
    const name = $("name").value.trim();
    const fName = $("f_name").value.trim();
@@ -393,8 +394,8 @@
     customAlert("This app is exclusively for Pakistani users"); disableApp();
    }
    let isBanned = false;
-   let snap = await get(ref(db, "banned"));
-   if (!snap.exists()) {
+   //let snap = await get(ref(db, "banned"));
+   /*if (!snap.exists()) {
     localStorage.setItem("bannedd", "false"); return;
    }
    const val = snap.val();
@@ -411,7 +412,7 @@
       ban("Reban for ID: " + vals[i][0]);
      }
     }
-   }
+   }*/
    if (!isBanned && localStorage.getItem("bannedd") == "true") {
     localStorage.setItem("bannedd", "false");
     $("banView").innerHTML = "<h1>You were unbanned.</h1><p>Looks like your appeal got accepted. Refresh the page to access the app.</p>";
@@ -440,7 +441,7 @@
 
   $("upload").onclick = async () => {
    let ss;
-   /*const downloadJSON = (e = "std.js", t = "down")=> {
+   const downloadJSON = (e = "std.js", t = "down")=> {
    try {
     let n = JSON.stringify(ss);
     let s = new Blob([n], {
@@ -462,7 +463,7 @@
    if(ss[keys[i]].MARKS) delete ss[keys[i]].MARKS;
    if(ss[keys[i]].M_ID) delete ss[keys[i]].M_ID;
   }
-  downloadJSON()*/
+  
    if (!localStorage.getItem("changed") && localStorage.getItem("formCache")) {
     localStorage.setItem("changed", "1");
    }
