@@ -161,26 +161,34 @@ function setUploadedUI(){
   app.classList.remove("hidden");
 }
 
-function upload(){
-  const data = {
-    name:name.value.trim(),
-    boardRn:boardRn.value.trim(),
-    center:center.value.trim(),
-    major:major.value,
-    shift:shift.value,
-    time:Date.now()
-  };
+function get(id){
+  return document.getElementById(id)
+}
 
-  if(!data.name || !data.boardRn){
-    alert("Fill required fields");
-    return;
+function upload(){
+  const nameEl = get("name")
+  const boardEl = get("boardRn")
+  const centerEl = get("center")
+
+  const data = {
+    name: (nameEl?.value || "").trim(),
+    boardRn: (boardEl?.value || "").trim(),
+    center: (centerEl?.value || "").trim(),
+    major: get("major")?.value,
+    shift: get("shift")?.value,
+    time: Date.now()
   }
 
-  localStorage.setItem("me",JSON.stringify(data));
-  fetch(API.upload(data,"data"));
+  if(!data.name || !data.boardRn){
+    alert("Fill required fields properly")
+    return
+  }
 
-  setUploadedUI();
-  loadData();
+  localStorage.setItem("me", JSON.stringify(data))
+  fetch(API.upload(data,"data"))
+
+  setUploadedUI()
+  loadData()
 }
 
 async function fetchData(){
