@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Board Seat Finder</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#0a0a0a;
+  color:#e5e5e5;
+  font-family:system-ui,sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+.container{max-width:900px;margin:auto;padding:12px}
+h2{font-weight:600;margin:10px 0}
+.card{
+  background:#111;
+  border:1px solid #222;
+  border-radius:10px;
+  padding:10px;
+  margin:10px 0;
+}
+input,select,button,textarea{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  background:#0f0f0f;
+  border:1px solid #222;
+  color:#fff;
+  border-radius:8px;
+  outline:none;
+}
+button{cursor:pointer}
+button:hover{background:#1a1a1a}
+details{
+  background:#111;
+  border:1px solid #222;
+  border-radius:8px;
+  padding:8px;
+  margin:6px 0;
+}
+summary{cursor:pointer}
+.small{font-size:12px;color:#aaa}
+hr{border:0;border-top:1px solid #222;margin:10px 0}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h2>Board Seat Finder</h2>
+
+<div class="card" id="countdown">Loading countdown...</div>
+
+<div class="card">
+<h3>Upload Info</h3>
+<input id="name" placeholder="Name"/>
+<input id="f_name" placeholder="Father Name"/>
+<input id="roll" placeholder="College Roll"/>
+<input id="boardRn" placeholder="Board Roll"/>
+<input id="center" placeholder="Exam Center"/>
+<select id="major">
+<option>ICS</option>
+<option>Pre Medical</option>
+<option>Pre Engineering</option>
+<option>ICOM</option>
+<option>Arts</option>
+</select>
+
+<select id="shift">
+<option>Morning</option>
+<option>Evening</option>
+</select>
+
+<button onclick="upload()">Upload</button>
+</div>
+
+<div class="card">
+<h3>Search Seats</h3>
+<input id="searchRn" placeholder="Board Roll No"/>
+<button onclick="search()">Find Nearby</button>
+<div id="results"></div>
+</div>
+
+<div class="card">
+<h3>Comments</h3>
+<textarea id="commentText" placeholder="Write comment..."></textarea>
+<button onclick="postComment()">Post Comment</button>
+<div id="comments"></div>
+</div>
+
+</div>
+
+<script>
+const API = {
+  upload: (data,status)=>`https://log.alimad.co/api/log?channel=boardsit&text=${encodeURIComponent(JSON.stringify(data))}&status=${status}`,
+  fetch: `https://log.alimad.co/api/pull?channel=boardsit`
+}
+
+const EXAM_START = new Date("2026-05-21T00:00:00");
+const EXAM_END = new Date("2026-06-12T23:59:59");
+
+function updateCountdown(){
+  const now = new Date();
+  let el = document.getElementById("countdown");
+
+  if(now < EXAM_START){
+    let d = Math.ceil((EXAM_START-now)/86400000);
+    el.textContent = `Exam starts in ${d} days`;
+  }
+  else if(now <= EXAM_END){
+    el.textContent = "Exams are ongoing. Good luck.";
+  }
+  else{
+    el.textContent = "Exams finished.";
+  }
+}
+setInterval(updateCountdown,1000);
+updateCountdown();
+
+async function upload(){
+  const data = {
+    name: name.value,
+    f_name: f_name.value,
+    roll: roll.value,
+    boardRn: boardRn.value,
+    center: center.value,
+    major: major.value,
+    shift: shift.value,
+    time: Date.now()
+  };
+
+  await fetch(API.upload(data,"data"));
+  alert("Uploaded");
+}
+
+async function fetchData(){
+  const res = await fetch(API.fetch);
+  const json = await res.json();
+  return json.logs || [];
+}
+
+async function search(){
+  const target = parseInt(searchRn.value);
+  const logs = await fetchData();
+
+  const students = logs
+    .filter(x=>x.status==="data")
+    .map(x=>{
+      try{return JSON.parse(x.text)}catch{return null}
+    })
+    .filter(Boolean)
+    .sort((a,b)=>a.boardRn-b.boardRn);
+
+  let idx = students.findIndex(s=>parseInt(s.boardRn)===target);
+  if(idx<0) idx = 0;
+
+  const slice = students.slice(Math.max(0,idx-5), idx+6);
+
+  results.innerHTML = slice.map(s=>`
+    <details>
+      <summary>${s.boardRn} - ${s.name} (${s.major})</summary>
+      <div class="small">
+        Father: ${s.f_name}<br/>
+        Center: ${s.center}<br/>
+        Shift: ${s.shift}
+      </div>
+    </details>
+  `).join("");
+}
+
+async function loadComments(){
+  const logs = await fetchData();
+  const comments = logs.filter(x=>x.status==="comment");
+
+  document.getElementById("comments").innerHTML =
+    comments.reverse().map(c=>{
+      let t;
+      try{t=JSON.parse(c.text)}catch{return ""}
+      return `<div class="card small">${t.text || ""}</div>`;
+    }).join("");
+}
+
+async function postComment(){
+  const text = commentText.value.trim();
+  if(!text) return;
+
+  await fetch(API.upload({text},"comment"));
+  commentText.value = "";
+  loadComments();
+}
+
+loadComments();
+</script>
+
+</body>
+</html>
