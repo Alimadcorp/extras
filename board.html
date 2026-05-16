@@ -11,15 +11,12 @@
 }
 
 :root{
-  --bg:#070707;
-  --card:#111;
-  --soft:#171717;
-  --border:#232323;
+  --bg:#050505;
+  --card:#0d0d0d;
+  --border:#1a1a1a;
   --text:#f5f5f5;
-  --muted:#9a9a9a;
-  --green:#22c55e;
-  --orange:#f59e0b;
-  --blue:#3b82f6;
+  --muted:#7d7d7d;
+  --highlight:#ffffff;
 }
 
 body{
@@ -30,29 +27,43 @@ body{
   -webkit-tap-highlight-color:transparent;
 }
 
-.container{
-  width:min(920px,100%);
+.app{
+  width:min(700px,100%);
   margin:auto;
-  padding:14px;
+  padding:12px;
 }
 
-.card{
+.block{
   background:var(--card);
   border:1px solid var(--border);
   border-radius:18px;
   padding:14px;
-  margin-bottom:14px;
+  margin-bottom:12px;
 }
 
 .title{
   font-size:28px;
   font-weight:800;
-  margin-bottom:6px;
+  letter-spacing:-1px;
 }
 
-.subtitle{
+.sub{
   color:var(--muted);
+  margin-top:4px;
   font-size:14px;
+  line-height:1.5;
+}
+
+.countdown{
+  margin-top:12px;
+  font-size:15px;
+  font-weight:700;
+}
+
+.last{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:12px;
 }
 
 input,select,button{
@@ -66,130 +77,112 @@ input,select,button{
 }
 
 input,select{
-  background:#0d0d0d;
+  background:#090909;
+  border:1px solid #181818;
   color:white;
-  border:1px solid #202020;
 }
 
 button{
   background:white;
   color:black;
-  font-weight:700;
+  font-weight:800;
   cursor:pointer;
 }
 
-button:hover{
-  opacity:.92;
+.row{
+  display:flex;
+  gap:8px;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
+.feed{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
 
 .student{
-  background:var(--soft);
-  border:1px solid #202020;
+  background:#090909;
+  border:1px solid #181818;
   border-radius:16px;
   padding:14px;
-  margin-bottom:10px;
   transition:.15s;
 }
 
-.student:hover{
-  transform:translateY(-1px);
+.student.same{
+  border-color:#ffffff;
+  background:#111;
 }
 
 .student.me{
-  border-color:var(--green);
-  background:#0d1711;
-}
-
-.student.orange{
-  border-color:var(--orange);
-}
-
-.student.blue{
-  border-color:var(--blue);
+  border-color:#ffffff;
 }
 
 .top{
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  gap:10px;
+  gap:12px;
 }
 
 .name{
-  font-weight:800;
-  font-size:17px;
+  font-size:16px;
+  font-weight:750;
 }
 
 .roll{
-  color:#cfcfcf;
+  color:#b5b5b5;
   font-size:13px;
+  margin-top:2px;
 }
 
 .meta{
   margin-top:10px;
-  color:var(--muted);
-  font-size:14px;
-  line-height:1.55;
-}
-
-.actions{
-  display:flex;
-  gap:10px;
+  color:#8d8d8d;
+  font-size:13px;
+  line-height:1.5;
 }
 
 .hidden{
   display:none;
 }
 
-.countdown{
-  font-size:18px;
-  font-weight:700;
+.nav{
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
 }
 
-.last{
-  color:var(--muted);
-  margin-top:5px;
-  font-size:13px;
+.smallBtn{
+  flex:1;
 }
 
-.sectionTitle{
-  font-size:20px;
-  font-weight:700;
-  margin-bottom:8px;
-}
-
-@media(max-width:700px){
-  .grid{
-    grid-template-columns:1fr;
-  }
+.centerMarker{
+  height:1px;
+  background:#fff;
+  opacity:.08;
+  margin:6px 0;
 }
 </style>
 </head>
 <body>
 
-<div class="container">
+<div class="app">
 
-<div class="card">
+<div class="block">
+
   <div class="title">Board Seat Finder</div>
-  <div class="subtitle">
-    Find the students sitting around your board roll number.
+
+  <div class="sub">
+    Find nearby students sitting around your roll number.
   </div>
 
   <div class="countdown" id="countdown"></div>
   <div class="last" id="lastUpdate"></div>
+
 </div>
 
-<div class="card" id="setup">
+<div class="block" id="setup">
 
-  <div class="sectionTitle">Your Information</div>
-
-  <div class="subtitle">
+  <div class="sub">
     Please enter correct information. This platform is entirely for supportive purposes.
   </div>
 
@@ -198,7 +191,7 @@ button:hover{
   <input id="center" placeholder="Exam Center">
   <input id="phone" placeholder="Contact Number (Optional)">
 
-  <div class="grid">
+  <div class="row">
     <select id="major">
       <option>ICS</option>
       <option>Pre Medical</option>
@@ -217,16 +210,14 @@ button:hover{
 
 </div>
 
-<div id="app" class="hidden">
+<div id="main" class="hidden">
 
-  <div class="card">
-    <div class="actions">
-      <button onclick="move(-7)">⬆ Previous 7</button>
-      <button onclick="move(7)">⬇ Next 7</button>
-    </div>
+  <div class="nav">
+    <button class="smallBtn" onclick="move(-7)">↑ Previous</button>
+    <button class="smallBtn" onclick="move(7)">Next ↓</button>
   </div>
 
-  <div id="results"></div>
+  <div class="feed" id="feed"></div>
 
 </div>
 
@@ -237,7 +228,7 @@ const API =
   "https://log.alimad.co/api/pull?channel=boardsit"
 
 const UPLOAD =
-  (d)=>
+  d =>
   `https://log.alimad.co/api/log?channel=boardsit&status=data&text=${encodeURIComponent(JSON.stringify(d))}`
 
 const EXAM_START =
@@ -247,42 +238,43 @@ const EXAM_END =
   new Date("2026-06-12T23:59:59")
 
 let students = []
-let centerIndex = 0
+let cursor = 0
 
 function $(id){
   return document.getElementById(id)
 }
 
-function countdown(){
+function updateCountdown(){
+
   const now = new Date()
 
   if(now < EXAM_START){
 
     const diff = EXAM_START - now
 
-    const d = Math.floor(diff / 86400000)
-    const h = Math.floor(diff / 3600000) % 24
-    const m = Math.floor(diff / 60000) % 60
-    const s = Math.floor(diff / 1000) % 60
+    const d = Math.floor(diff/86400000)
+    const h = Math.floor(diff/3600000)%24
+    const m = Math.floor(diff/60000)%60
+    const s = Math.floor(diff/1000)%60
 
     $("countdown").textContent =
-      `Exams start in ${d}d ${h}h ${m}m ${s}s`
+      `${d}d ${h}h ${m}m ${s}s until exams`
 
   }else if(now <= EXAM_END){
 
     $("countdown").textContent =
-      "Exams are ongoing. Good luck."
+      "Exams ongoing"
 
   }else{
 
     $("countdown").textContent =
-      "Exams finished."
+      "Exams finished"
 
   }
 }
 
-setInterval(countdown,1000)
-countdown()
+setInterval(updateCountdown,1000)
+updateCountdown()
 
 async function fetchData(){
 
@@ -291,7 +283,8 @@ async function fetchData(){
     const res = await fetch(API)
     const json = await res.json()
 
-    students = (json.logs || [])
+    const raw =
+      (json.logs || [])
       .filter(x => x.status === "data")
       .map(x=>{
         try{
@@ -302,6 +295,24 @@ async function fetchData(){
       })
       .filter(Boolean)
       .filter(x => x.boardRn)
+
+    const deduped = new Map()
+
+    for(const s of raw){
+
+      const key =
+        Number(s.boardRn)
+
+      const existing =
+        deduped.get(key)
+
+      if(!existing || (s.time || 0) > (existing.time || 0)){
+        deduped.set(key,s)
+      }
+    }
+
+    students =
+      [...deduped.values()]
       .sort((a,b)=>
         Number(a.boardRn) - Number(b.boardRn)
       )
@@ -309,6 +320,7 @@ async function fetchData(){
     $("lastUpdate").textContent =
       `Updated ${new Date().toLocaleTimeString()}`
 
+    locateMe()
     render()
 
   }catch(err){
@@ -319,26 +331,29 @@ async function fetchData(){
 function saveMe(){
 
   const me = {
-    name: $("name").value.trim(),
-    boardRn: $("boardRn").value.trim(),
-    center: $("center").value.trim(),
-    phone: $("phone").value.trim(),
-    major: $("major").value,
-    shift: $("shift").value,
-    time: Date.now()
+    name:$("name").value.trim(),
+    boardRn:$("boardRn").value.trim(),
+    center:$("center").value.trim(),
+    phone:$("phone").value.trim(),
+    major:$("major").value,
+    shift:$("shift").value,
+    time:Date.now()
   }
 
   if(!me.name || !me.boardRn){
-    alert("Please fill required fields.")
+    alert("Fill required fields")
     return
   }
 
-  localStorage.setItem("boardsit_me", JSON.stringify(me))
+  localStorage.setItem(
+    "boardsit_me",
+    JSON.stringify(me)
+  )
 
   fetch(UPLOAD(me))
 
   $("setup").classList.add("hidden")
-  $("app").classList.remove("hidden")
+  $("main").classList.remove("hidden")
 
   locateMe()
   render()
@@ -349,31 +364,34 @@ function locateMe(){
   const me =
     JSON.parse(localStorage.getItem("boardsit_me") || "null")
 
-  if(!me) return
+  if(!me || !students.length)
+    return
 
   const idx =
-    students.findIndex(x =>
-      Number(x.boardRn) === Number(me.boardRn)
+    students.findIndex(
+      x => Number(x.boardRn) === Number(me.boardRn)
     )
 
-  centerIndex =
-    idx === -1 ? 0 : idx
+  cursor =
+    idx === -1
+    ? 0
+    : idx
 }
 
 function move(amount){
 
-  centerIndex += amount
+  cursor += amount
 
-  if(centerIndex < 0)
-    centerIndex = 0
+  if(cursor < 0)
+    cursor = 0
 
-  if(centerIndex >= students.length)
-    centerIndex = students.length - 1
+  if(cursor >= students.length)
+    cursor = students.length - 1
 
-  render()
+  render(true)
 }
 
-function render(){
+function render(scroll=false){
 
   const me =
     JSON.parse(localStorage.getItem("boardsit_me") || "null")
@@ -382,58 +400,46 @@ function render(){
     return
 
   const start =
-    Math.max(0, centerIndex - 7)
+    Math.max(0,cursor-7)
 
   const end =
-    Math.min(students.length, centerIndex + 8)
+    Math.min(students.length,cursor+8)
 
   const visible =
-    students.slice(start, end)
+    students.slice(start,end)
 
-  $("results").innerHTML =
-    visible.map(student => {
+  $("feed").innerHTML =
+    visible.map(student=>{
 
       const mine =
         Number(student.boardRn) === Number(me.boardRn)
 
-      let cls = "student"
-
-      if(mine){
-
-        cls += " me"
-
-      }else{
-
-        if(
-          me.shift === "Morning" &&
-          student.shift === "Evening"
-        ){
-          cls += " orange"
-        }
-
-        if(
-          me.shift === "Evening" &&
-          student.shift === "Morning"
-        ){
-          cls += " blue"
-        }
-
-      }
+      const sameShift =
+        student.shift === me.shift
 
       return `
-      <div class="${cls}">
+      <div
+        class="
+          student
+          ${mine ? "me" : ""}
+          ${sameShift ? "same" : ""}
+        "
+        data-roll="${student.boardRn}"
+      >
 
         <div class="top">
 
           <div>
+
             <div class="name">
               ${student.name}
-              ${mine ? " (You)" : ""}
+              ${mine ? "(You)" : ""}
             </div>
 
             <div class="roll">
-              Roll No: ${student.boardRn}
+              ${student.boardRn}
             </div>
+
           </div>
 
         </div>
@@ -451,6 +457,22 @@ function render(){
       </div>
       `
     }).join("")
+
+  if(scroll){
+
+    const meCard =
+      document.querySelector(".student.me")
+
+    if(meCard){
+
+      meCard.scrollIntoView({
+        behavior:"smooth",
+        block:"center"
+      })
+
+    }
+
+  }
 }
 
 function init(){
@@ -461,18 +483,13 @@ function init(){
   if(me){
 
     $("setup").classList.add("hidden")
-    $("app").classList.remove("hidden")
+    $("main").classList.remove("hidden")
 
   }
 
   fetchData()
 
   setInterval(fetchData,60000)
-
-  setTimeout(()=>{
-    locateMe()
-    render()
-  },500)
 }
 
 init()
