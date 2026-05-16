@@ -1,276 +1,481 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Board Seat Finder</title>
 
 <style>
-*{box-sizing:border-box}
+*{
+  box-sizing:border-box;
+}
+
+:root{
+  --bg:#070707;
+  --card:#111;
+  --soft:#171717;
+  --border:#232323;
+  --text:#f5f5f5;
+  --muted:#9a9a9a;
+  --green:#22c55e;
+  --orange:#f59e0b;
+  --blue:#3b82f6;
+}
+
 body{
   margin:0;
-  font-family:system-ui;
-  background:#0a0a0a;
-  color:#eaeaea;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui,sans-serif;
   -webkit-tap-highlight-color:transparent;
 }
 
-.container{max-width:900px;margin:auto;padding:12px}
-
-h2{margin:10px 0;font-weight:600}
-
-.card{
-  background:#111;
-  border:1px solid #222;
-  border-radius:10px;
-  padding:10px;
-  margin:10px 0;
+.container{
+  width:min(920px,100%);
+  margin:auto;
+  padding:14px;
 }
 
-input,select,textarea{
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:14px;
+}
+
+.title{
+  font-size:28px;
+  font-weight:800;
+  margin-bottom:6px;
+}
+
+.subtitle{
+  color:var(--muted);
+  font-size:14px;
+}
+
+input,select,button{
   width:100%;
-  padding:10px;
-  margin:6px 0;
-  background:#0d0d0d;
-  border:1px solid #222;
-  color:#fff;
-  border-radius:8px;
+  margin-top:10px;
+  border:none;
   outline:none;
+  border-radius:14px;
+  padding:14px;
+  font-size:15px;
+}
+
+input,select{
+  background:#0d0d0d;
+  color:white;
+  border:1px solid #202020;
 }
 
 button{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  background:#fff;
-  color:#000;
-  border:none;
-  border-radius:8px;
+  background:white;
+  color:black;
+  font-weight:700;
   cursor:pointer;
-  font-weight:600;
 }
 
-button:hover{opacity:0.85}
-
-details{
-  background:#111;
-  border:1px solid #222;
-  padding:8px;
-  border-radius:8px;
-  margin:6px 0;
+button:hover{
+  opacity:.92;
 }
 
-summary{cursor:pointer}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
 
-.small{font-size:12px;color:#aaa}
+.student{
+  background:var(--soft);
+  border:1px solid #202020;
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:10px;
+  transition:.15s;
+}
 
-.hidden{display:none}
+.student:hover{
+  transform:translateY(-1px);
+}
+
+.student.me{
+  border-color:var(--green);
+  background:#0d1711;
+}
+
+.student.orange{
+  border-color:var(--orange);
+}
+
+.student.blue{
+  border-color:var(--blue);
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.name{
+  font-weight:800;
+  font-size:17px;
+}
+
+.roll{
+  color:#cfcfcf;
+  font-size:13px;
+}
+
+.meta{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.55;
+}
+
+.actions{
+  display:flex;
+  gap:10px;
+}
+
+.hidden{
+  display:none;
+}
+
+.countdown{
+  font-size:18px;
+  font-weight:700;
+}
+
+.last{
+  color:var(--muted);
+  margin-top:5px;
+  font-size:13px;
+}
+
+.sectionTitle{
+  font-size:20px;
+  font-weight:700;
+  margin-bottom:8px;
+}
+
+@media(max-width:700px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
 </style>
 </head>
-
 <body>
+
 <div class="container">
 
-<h2>Board Seat Finder</h2>
+<div class="card">
+  <div class="title">Board Seat Finder</div>
+  <div class="subtitle">
+    Find the students sitting around your board roll number.
+  </div>
 
-<div class="card" id="countdown">Loading...</div>
-<div class="card small" id="lastUpdate">Last update: --</div>
-
-<!-- UPLOAD FIRST -->
-<div class="card" id="uploadBox">
-  <h3>Upload your info</h3>
-  <p class="small">Please enter correct information. This platform is only for supportive use.</p>
-
-  <input id="name" placeholder="Complete Name"/>
-  <input id="boardRn" placeholder="Board Roll Number"/>
-  <input id="center" placeholder="Exam Center"/>
-
-  <select id="major">
-    <option>ICS</option>
-    <option>Pre Medical</option>
-    <option>Pre Engineering</option>
-    <option>ICOM</option>
-    <option>Arts</option>
-  </select>
-
-  <select id="shift">
-    <option>Morning</option>
-    <option>Evening</option>
-  </select>
-
-  <button onclick="upload()">Upload</button>
+  <div class="countdown" id="countdown"></div>
+  <div class="last" id="lastUpdate"></div>
 </div>
 
-<!-- LOCKED UNTIL UPLOAD -->
+<div class="card" id="setup">
+
+  <div class="sectionTitle">Your Information</div>
+
+  <div class="subtitle">
+    Please enter correct information. This platform is entirely for supportive purposes.
+  </div>
+
+  <input id="name" placeholder="Complete Name">
+  <input id="boardRn" placeholder="Board Roll Number">
+  <input id="center" placeholder="Exam Center">
+  <input id="phone" placeholder="Contact Number (Optional)">
+
+  <div class="grid">
+    <select id="major">
+      <option>ICS</option>
+      <option>Pre Medical</option>
+      <option>Pre Engineering</option>
+      <option>ICOM</option>
+      <option>Arts</option>
+    </select>
+
+    <select id="shift">
+      <option>Morning</option>
+      <option>Evening</option>
+    </select>
+  </div>
+
+  <button onclick="saveMe()">Continue</button>
+
+</div>
+
 <div id="app" class="hidden">
 
-<div class="card">
-<h3>Search Seats</h3>
-<input id="searchRn" placeholder="Board Roll No"/>
-<button onclick="search()">Find Nearby</button>
-<div id="results"></div>
-</div>
+  <div class="card">
+    <div class="actions">
+      <button onclick="move(-7)">⬆ Previous 7</button>
+      <button onclick="move(7)">⬇ Next 7</button>
+    </div>
+  </div>
 
-<div class="card">
-<h3>Comments</h3>
-<textarea id="commentText" placeholder="Write comment..."></textarea>
-<button onclick="postComment()">Post</button>
-<div id="comments"></div>
-</div>
+  <div id="results"></div>
 
 </div>
 
 </div>
 
 <script>
-const API = {
-  upload:(d,s)=>`https://log.alimad.co/api/log?channel=boardsit&text=${encodeURIComponent(JSON.stringify(d))}&status=${s}`,
-  fetch:`https://log.alimad.co/api/pull?channel=boardsit`
-}
+const API =
+  "https://log.alimad.co/api/pull?channel=boardsit"
 
-const EXAM_START = new Date("2026-05-21T00:00:00");
-const EXAM_END = new Date("2026-06-12T23:59:59");
+const UPLOAD =
+  (d)=>
+  `https://log.alimad.co/api/log?channel=boardsit&status=data&text=${encodeURIComponent(JSON.stringify(d))}`
 
-let cache = [];
+const EXAM_START =
+  new Date("2026-05-21T00:00:00")
 
-function countdown(){
-  const now = new Date();
-  const el = document.getElementById("countdown");
+const EXAM_END =
+  new Date("2026-06-12T23:59:59")
 
-  const diff = EXAM_START - now;
+let students = []
+let centerIndex = 0
 
-  if(diff > 0){
-    const s = Math.floor(diff/1000)%60;
-    const m = Math.floor(diff/60000)%60;
-    const h = Math.floor(diff/3600000)%24;
-    const d = Math.floor(diff/86400000);
-    el.textContent = `Exam starts in ${d}d ${h}h ${m}m ${s}s`;
-  }
-  else if(now <= EXAM_END){
-    el.textContent = "Exams ongoing. Stay focused.";
-  }
-  else{
-    el.textContent = "Exams finished.";
-  }
-}
-setInterval(countdown,1000);
-countdown();
-
-function setUploadedUI(){
-  uploadBox.classList.add("hidden");
-  app.classList.remove("hidden");
-}
-
-function get(id){
+function $(id){
   return document.getElementById(id)
 }
 
-function upload(){
-  const nameEl = get("name")
-  const boardEl = get("boardRn")
-  const centerEl = get("center")
+function countdown(){
+  const now = new Date()
 
-  const data = {
-    name: (nameEl?.value || "").trim(),
-    boardRn: (boardEl?.value || "").trim(),
-    center: (centerEl?.value || "").trim(),
-    major: get("major")?.value,
-    shift: get("shift")?.value,
+  if(now < EXAM_START){
+
+    const diff = EXAM_START - now
+
+    const d = Math.floor(diff / 86400000)
+    const h = Math.floor(diff / 3600000) % 24
+    const m = Math.floor(diff / 60000) % 60
+    const s = Math.floor(diff / 1000) % 60
+
+    $("countdown").textContent =
+      `Exams start in ${d}d ${h}h ${m}m ${s}s`
+
+  }else if(now <= EXAM_END){
+
+    $("countdown").textContent =
+      "Exams are ongoing. Good luck."
+
+  }else{
+
+    $("countdown").textContent =
+      "Exams finished."
+
+  }
+}
+
+setInterval(countdown,1000)
+countdown()
+
+async function fetchData(){
+
+  try{
+
+    const res = await fetch(API)
+    const json = await res.json()
+
+    students = (json.logs || [])
+      .filter(x => x.status === "data")
+      .map(x=>{
+        try{
+          return JSON.parse(x.text)
+        }catch{
+          return null
+        }
+      })
+      .filter(Boolean)
+      .filter(x => x.boardRn)
+      .sort((a,b)=>
+        Number(a.boardRn) - Number(b.boardRn)
+      )
+
+    $("lastUpdate").textContent =
+      `Updated ${new Date().toLocaleTimeString()}`
+
+    render()
+
+  }catch(err){
+    console.error(err)
+  }
+}
+
+function saveMe(){
+
+  const me = {
+    name: $("name").value.trim(),
+    boardRn: $("boardRn").value.trim(),
+    center: $("center").value.trim(),
+    phone: $("phone").value.trim(),
+    major: $("major").value,
+    shift: $("shift").value,
     time: Date.now()
   }
 
-  if(!data.name || !data.boardRn){
-    alert("Fill required fields properly")
+  if(!me.name || !me.boardRn){
+    alert("Please fill required fields.")
     return
   }
 
-  localStorage.setItem("me", JSON.stringify(data))
-  fetch(API.upload(data,"data"))
+  localStorage.setItem("boardsit_me", JSON.stringify(me))
 
-  setUploadedUI()
-  loadData()
+  fetch(UPLOAD(me))
+
+  $("setup").classList.add("hidden")
+  $("app").classList.remove("hidden")
+
+  locateMe()
+  render()
 }
 
-async function fetchData(){
-  const res = await fetch(API.fetch);
-  const json = await res.json();
+function locateMe(){
 
-  const logs = json.logs || [];
-  const data = logs.filter(x=>x.status==="data").map(x=>{
-    try{return JSON.parse(x.text)}catch{return null}
-  }).filter(Boolean);
+  const me =
+    JSON.parse(localStorage.getItem("boardsit_me") || "null")
 
-  const comments = logs.filter(x=>x.status==="comment").map(x=>{
-    try{return JSON.parse(x.text)}catch{return null}
-  }).filter(Boolean);
+  if(!me) return
 
-  cache = {data,comments,time:Date.now()};
-  return cache;
+  const idx =
+    students.findIndex(x =>
+      Number(x.boardRn) === Number(me.boardRn)
+    )
+
+  centerIndex =
+    idx === -1 ? 0 : idx
 }
 
-async function loadData(){
-  await fetchData();
-  render();
+function move(amount){
+
+  centerIndex += amount
+
+  if(centerIndex < 0)
+    centerIndex = 0
+
+  if(centerIndex >= students.length)
+    centerIndex = students.length - 1
+
+  render()
 }
 
 function render(){
-  const me = JSON.parse(localStorage.getItem("me")||"null");
 
-  const sorted = [...cache.data].sort((a,b)=>a.boardRn-b.boardRn);
+  const me =
+    JSON.parse(localStorage.getItem("boardsit_me") || "null")
 
-  const last = cache.data[cache.data.length-1];
-  lastUpdate.textContent = last
-    ? `Last update: ${Math.floor((Date.now()-last.time)/1000)}s ago`
-    : "Last update: --";
+  if(!me || !students.length)
+    return
 
-  comments.innerHTML = cache.comments.slice(-10).reverse().map(c=>
-    `<div class="card small">${c.text||""}</div>`
-  ).join("");
+  const start =
+    Math.max(0, centerIndex - 7)
 
-  window.__students = sorted;
-}
+  const end =
+    Math.min(students.length, centerIndex + 8)
 
-function search(){
-  if(!window.__students) return;
+  const visible =
+    students.slice(start, end)
 
-  const target = parseInt(searchRn.value);
-  const arr = window.__students;
+  $("results").innerHTML =
+    visible.map(student => {
 
-  let idx = arr.findIndex(x=>parseInt(x.boardRn)===target);
-  if(idx<0) idx=0;
+      const mine =
+        Number(student.boardRn) === Number(me.boardRn)
 
-  const slice = arr.slice(Math.max(0,idx-5),idx+6);
+      let cls = "student"
 
-  results.innerHTML = slice.map(s=>
-    `<details>
-      <summary>${s.boardRn} - ${s.name}</summary>
-      <div class="small">
-        Center: ${s.center}<br/>
-        Shift: ${s.shift}<br/>
-        Major: ${s.major}
+      if(mine){
+
+        cls += " me"
+
+      }else{
+
+        if(
+          me.shift === "Morning" &&
+          student.shift === "Evening"
+        ){
+          cls += " orange"
+        }
+
+        if(
+          me.shift === "Evening" &&
+          student.shift === "Morning"
+        ){
+          cls += " blue"
+        }
+
+      }
+
+      return `
+      <div class="${cls}">
+
+        <div class="top">
+
+          <div>
+            <div class="name">
+              ${student.name}
+              ${mine ? " (You)" : ""}
+            </div>
+
+            <div class="roll">
+              Roll No: ${student.boardRn}
+            </div>
+          </div>
+
+        </div>
+
+        <div class="meta">
+          ${student.major || "-"} • ${student.shift || "-"}<br>
+          ${student.center || "-"}
+          ${
+            student.phone
+            ? `<br>${student.phone}`
+            : ""
+          }
+        </div>
+
       </div>
-    </details>`
-  ).join("");
+      `
+    }).join("")
 }
 
-async function postComment(){
-  const text = commentText.value.trim();
-  if(!text) return;
+function init(){
 
-  await fetch(API.upload({text},"comment"));
-  commentText.value="";
-  loadData();
-}
+  const me =
+    JSON.parse(localStorage.getItem("boardsit_me") || "null")
 
-(async function init(){
-  const me = localStorage.getItem("me");
   if(me){
-    setUploadedUI();
+
+    $("setup").classList.add("hidden")
+    $("app").classList.remove("hidden")
+
   }
 
-  await loadData();
-  setInterval(loadData,60000);
-})();
+  fetchData()
+
+  setInterval(fetchData,60000)
+
+  setTimeout(()=>{
+    locateMe()
+    render()
+  },500)
+}
+
+init()
 </script>
 
 </body>
